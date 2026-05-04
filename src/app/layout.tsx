@@ -3,7 +3,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 import { ContourLines } from "@/components/bg/ContourLines";
-import { LogoIntro } from "@/components/intro/LogoIntro";
+import { SunriseIntro } from "@/components/intro/SunriseIntro";
 import { Nav } from "@/components/nav/Nav";
 import { PhaseRouter } from "@/components/sun/PhaseRouter";
 import { SunCanvas } from "@/components/sun/SunCanvas";
@@ -66,7 +66,7 @@ export default function RootLayout({
         <main id="main" className="relative z-10">{children}</main>
         <Footer />
         <SoundToggle />
-        <LogoIntro />
+        <SunriseIntro />
       </body>
     </html>
   );
