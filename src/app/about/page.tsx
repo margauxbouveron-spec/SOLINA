@@ -37,23 +37,23 @@ export default function AboutPage() {
   return (
     <article className="pt-32">
       <header className="gutter mx-auto max-w-[1600px]">
-        <div className="eyebrow text-ink/55">La Maison</div>
+        <div className="eyebrow text-cream/55">La Maison</div>
         <h1 className="headline mt-8 max-w-5xl text-[14vw] leading-[0.92] md:text-[10vw] lg:text-[160px]">
           Née du soleil,<br />
-          <em className="font-editorial italic text-ink/65">de la mer et de la pierre.</em>
+          <em className="font-editorial italic text-cream/65">de la mer et de la pierre.</em>
         </h1>
       </header>
 
       <section className="gutter mx-auto mt-32 grid max-w-[1600px] gap-16 md:grid-cols-12">
         <div className="md:col-span-5">
-          <div className="eyebrow text-ink/55">Origine</div>
-          <p className="mt-8 font-editorial text-3xl leading-snug text-ink/85 md:text-4xl">
+          <div className="eyebrow text-cream/55">Origine</div>
+          <p className="mt-8 font-editorial text-3xl leading-snug text-cream/85 md:text-4xl">
             Solina est un prénom — celui d’une grand-mère qui marchait pieds nus
             sur les pierres chaudes, chaque été, en Méditerranée.
           </p>
         </div>
         <div className="md:col-span-7 md:col-start-7 md:pl-12">
-          <p className="max-w-[60ch] text-base leading-relaxed text-ink/70">
+          <p className="max-w-[60ch] text-base leading-relaxed text-cream/70">
             Nous dessinons et fabriquons nos pièces depuis un atelier baigné de
             lumière, à quelques kilomètres de la côte. Nous travaillons l’or 18
             carats à la main, en petites séries, pour qu’aucune pièce ne soit
@@ -61,7 +61,7 @@ export default function AboutPage() {
             lapis, nacres, perles baroques. Notre signature est une lumière, plus
             qu’une forme.
           </p>
-          <p className="mt-6 max-w-[60ch] text-base leading-relaxed text-ink/70">
+          <p className="mt-6 max-w-[60ch] text-base leading-relaxed text-cream/70">
             Chaque collection est pensée comme un souvenir d’été : un instant
             précis où la chaleur, la matière et la peau s’accordent. Nous croyons
             au luxe silencieux, à la lenteur, à la nuance. Nous croyons surtout
@@ -75,7 +75,7 @@ export default function AboutPage() {
         {moments.map((m, i) => (
           <figure
             key={m.label}
-            className={`group relative overflow-hidden bg-sand/30 ${m.aspect} ${m.span}`}
+            className={`group relative overflow-hidden bg-shore/30 ${m.aspect} ${m.span}`}
             style={{ animation: `rise 1.2s cubic-bezier(0.16,1,0.3,1) ${i * 0.1}s both` }}
           >
             <img
@@ -115,11 +115,11 @@ export default function AboutPage() {
           </div>
         </div>
         <div className="md:col-span-5">
-          <div className="eyebrow text-ink/55">L’atelier</div>
+          <div className="eyebrow text-cream/55">L’atelier</div>
           <h2 className="headline mt-6 text-[10vw] leading-[0.95] md:text-[64px]">
             Patience.
           </h2>
-          <p className="mt-8 max-w-[55ch] text-base leading-relaxed text-ink/70">
+          <p className="mt-8 max-w-[55ch] text-base leading-relaxed text-cream/70">
             Chaque pièce passe par les mains de trois artisans. La fonte, la
             mise en forme, le polissage. Une journée, parfois trois.
           </p>
@@ -130,11 +130,11 @@ export default function AboutPage() {
       </section>
 
       <section className="gutter mx-auto mt-40 max-w-3xl text-center">
-        <p className="font-editorial text-3xl leading-snug text-ink/85 md:text-4xl">
+        <p className="font-editorial text-3xl leading-snug text-cream/85 md:text-4xl">
           “Capturer la lumière, ce n’est pas la posséder.<br />
           C’est la rendre, plus belle.”
         </p>
-        <div className="mt-6 text-[10px] uppercase tracking-[0.42em] text-ink/45">
+        <div className="mt-6 text-[10px] uppercase tracking-[0.42em] text-cream/45">
           — SOLINA
         </div>
       </section>

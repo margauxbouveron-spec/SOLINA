@@ -3,23 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --cream: #f6f1e8;
-  --sand: #e8d9c5;
-  --gold: #d4af37;
+  --night: #070d17;
+  --abyss: #0b1626;
+  --shore: #15243a;
+  --cream: #f4ecdd;
+  --mist:  #b8a98e;
+  --gold:  #e0c275;
   --olive: #6e7f5f;
-  --deep: #1f3a5f;
-  --ink: #1a1814;
+  --deep:  #1f3a5f;
 
   --sun-x: 50vw;
   --sun-y: 38vh;
-  --sun-temp: 1; /* 0 cool dawn → 1 golden → 2 sunset */
+  --sun-temp: 1;
   --sun-intensity: 1;
 }
 
 html,
 body {
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--night);
+  color: var(--cream);
   font-family: var(--font-sans), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
@@ -32,7 +34,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Editorial serif used for hero typography */
 .font-editorial {
   font-family: var(--font-serif), "Fraunces", "Instrument Serif", serif;
   font-weight: 300;
@@ -40,23 +41,20 @@ body {
   font-variation-settings: "opsz" 144, "SOFT" 50;
 }
 
-/* Selection in gold */
 ::selection {
-  background: rgba(212, 175, 55, 0.35);
-  color: var(--ink);
+  background: rgba(224, 194, 117, 0.35);
+  color: var(--cream);
 }
 
-/* Hide scrollbars but keep scrolling */
 html {
   scroll-behavior: smooth;
 }
-
 html::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
-/* Light overlay following the sun — applied to <body::before> globally */
+/* Soft warm glow following the sun — overlays the night canvas */
 body::before {
   content: "";
   position: fixed;
@@ -64,32 +62,31 @@ body::before {
   pointer-events: none;
   z-index: 1;
   background: radial-gradient(
-    900px 700px at var(--sun-x) var(--sun-y),
-    rgba(255, 220, 140, calc(0.32 * var(--sun-intensity))),
-    rgba(246, 241, 232, 0) 60%
+    1100px 800px at var(--sun-x) var(--sun-y),
+    rgba(255, 210, 130, calc(0.18 * var(--sun-intensity))),
+    rgba(7, 13, 23, 0) 65%
   );
   mix-blend-mode: screen;
   transition: background 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Gold dust grain — adds tactile film feel */
+/* Faint film grain — pure noise dot pattern */
 body::after {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 2;
-  opacity: 0.06;
-  mix-blend-mode: multiply;
-  background-image: radial-gradient(rgba(31, 24, 20, 0.6) 1px, transparent 1px);
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: radial-gradient(rgba(244, 236, 221, 0.6) 1px, transparent 1px);
   background-size: 3px 3px;
 }
 
-/* Reusable editorial headline */
 .headline {
   font-family: var(--font-serif), "Fraunces", serif;
   font-weight: 300;
-  line-height: 0.92;
+  line-height: 0.9;
   letter-spacing: -0.025em;
   font-variation-settings: "opsz" 144, "SOFT" 50;
   text-wrap: balance;
@@ -102,19 +99,17 @@ body::after {
   font-weight: 400;
 }
 
-/* Utility for cinematic content padding */
 .gutter {
   padding-left: clamp(1.25rem, 4vw, 4rem);
   padding-right: clamp(1.25rem, 4vw, 4rem);
 }
 
-/* Slow gold sweep — used on hover of premium elements */
+/* Slow gold sweep utility */
 .sweep {
   position: relative;
   overflow: hidden;
   isolation: isolate;
 }
-
 .sweep::after {
   content: "";
   position: absolute;
@@ -122,7 +117,7 @@ body::after {
   background: linear-gradient(
     115deg,
     transparent 30%,
-    rgba(255, 230, 170, 0.55) 50%,
+    rgba(224, 194, 117, 0.35) 50%,
     transparent 70%
   );
   transform: translateX(-120%);
@@ -130,7 +125,6 @@ body::after {
   pointer-events: none;
   z-index: 1;
 }
-
 .sweep:hover::after {
   transform: translateX(120%);
 }
@@ -141,26 +135,24 @@ body::after {
   letter-spacing: 0.28em;
   text-transform: uppercase;
   padding: 0.5rem 0.9rem;
-  border: 1px solid rgba(26, 24, 20, 0.18);
+  border: 1px solid rgba(244, 236, 221, 0.18);
   background: transparent;
+  color: var(--cream);
   cursor: pointer;
   transition: all 0.5s ease;
 }
-
 .chip:hover,
 .chip[aria-pressed="true"] {
-  background: var(--ink);
-  color: var(--cream);
-  border-color: var(--ink);
+  background: var(--cream);
+  color: var(--night);
+  border-color: var(--cream);
 }
 
-/* Focus visible — luxury minimal */
 :focus-visible {
   outline: 1px solid var(--gold);
   outline-offset: 3px;
 }
 
-/* Reduced motion respect */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

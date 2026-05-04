@@ -3,11 +3,11 @@ import { Cta } from "@/components/ui/Cta";
 export default function NotFound() {
   return (
     <section className="gutter mx-auto flex min-h-[80svh] max-w-3xl flex-col items-center justify-center text-center">
-      <div className="eyebrow text-ink/55">404</div>
+      <div className="eyebrow text-cream/55">404</div>
       <h1 className="headline mt-6 text-[14vw] leading-[0.95] md:text-[120px]">
         Égarés, comme un rayon.
       </h1>
-      <p className="mt-6 text-base text-ink/65">
+      <p className="mt-6 text-base text-cream/65">
         La page que vous cherchez n’existe plus ou n’a jamais existé.
       </p>
       <div className="mt-10">

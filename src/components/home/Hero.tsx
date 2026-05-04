@@ -1,21 +1,37 @@
 "use client";
 
-import Link from "next/link";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import Link from "next/link";
 import { useRef } from "react";
 import { Cta } from "@/components/ui/Cta";
 
+/**
+ * Enyo-style hero — massive serif typography wrapping behind the
+ * iridescent sun, with a corner badge and sub-block at the bottom.
+ * The sun itself is rendered by the global SunCanvas one layer above.
+ */
 export function Hero() {
-  const root = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLElement>(null);
 
   useGSAP(
     () => {
-      const tl = gsap.timeline({ delay: 3.5, defaults: { ease: "power3.out" } });
-      tl.from(".hero-eyebrow", { autoAlpha: 0, y: 10, duration: 0.9 })
-        .from(".hero-line", { autoAlpha: 0, y: 24, duration: 1.2, stagger: 0.12 }, "<0.1")
-        .from(".hero-cta", { autoAlpha: 0, y: 14, duration: 0.9 }, "<0.4")
-        .from(".hero-scroll", { autoAlpha: 0, y: 8, duration: 0.8 }, "<0.2");
+      const tl = gsap.timeline({ delay: 3.4, defaults: { ease: "power3.out" } });
+      tl.from(".hero-badge", { autoAlpha: 0, y: -12, duration: 0.9 }, 0)
+        .from(".hero-word", {
+          autoAlpha: 0,
+          y: 36,
+          filter: "blur(14px)",
+          duration: 1.4,
+          stagger: 0.12,
+        }, 0.1)
+        .from(".hero-meta", {
+          autoAlpha: 0,
+          y: 16,
+          duration: 0.9,
+          stagger: 0.1,
+        }, 0.6)
+        .from(".hero-scroll", { autoAlpha: 0, y: 8, duration: 0.8 }, 0.9);
     },
     { scope: root }
   );
@@ -23,46 +39,62 @@ export function Hero() {
   return (
     <section
       ref={root}
-      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden gutter pb-20 pt-32"
+      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden gutter pb-16 pt-32"
     >
-      {/* Subtle horizon — hand-drawn line of light at golden hour */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(246,241,232,0) 40%, rgba(232,217,197,0.45) 78%, rgba(232,217,197,0.85) 100%)",
-        }}
-      />
-
-      <div className="relative z-10 mx-auto w-full max-w-[1600px]">
-        <div className="hero-eyebrow eyebrow text-ink/55">Édition d’été — MMXXVI</div>
-        <h1 className="headline mt-8 text-[18vw] leading-[0.85] text-ink sm:text-[14vw] md:text-[12vw] lg:text-[180px]">
-          <span className="hero-line block">SOLINA</span>
-        </h1>
-        <p className="mt-10 max-w-md text-base leading-relaxed text-ink/75 md:text-lg">
-          <span className="hero-line block">
-            Une maison de bijoux née du soleil,
+      {/* Top-right corner badge — awwwards-style square stamp */}
+      <div className="hero-badge absolute right-4 top-24 z-20 md:right-8 md:top-28">
+        <div className="flex h-32 w-12 flex-col items-center justify-between bg-cream py-4 text-night md:h-40 md:w-16 md:py-5">
+          <span className="font-editorial text-xl italic md:text-2xl">w.</span>
+          <span
+            className="text-[9px] uppercase tracking-[0.42em] md:text-[10px]"
+            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+          >
+            Édition MMXXVI
           </span>
-          <span className="hero-line block">de la mer et de la pierre.</span>
-        </p>
+        </div>
+      </div>
 
-        <div className="hero-cta mt-12 flex items-center gap-6">
-          <Cta href="/collection">Découvrir la collection</Cta>
+      {/* Massive type — wraps behind the sphere; the sphere sits centered
+          in the global SunCanvas (z-[3]) and the text is at z-[5] but
+          mid-line is invisible thanks to mix-blend with night. */}
+      <div className="relative z-[5] mx-auto w-full max-w-[1700px] flex-1 flex flex-col justify-center">
+        <h1 className="headline text-cream">
+          <span
+            className="hero-word block text-[18vw] leading-[0.84] md:text-[16vw] lg:text-[15vw] xl:text-[14vw]"
+          >
+            capturer
+          </span>
+          <span
+            className="hero-word block pl-[2vw] text-right font-editorial italic text-[18vw] leading-[0.84] md:text-[16vw] lg:text-[15vw] xl:text-[14vw]"
+          >
+            la&nbsp;lumière
+          </span>
+        </h1>
+      </div>
+
+      {/* Bottom-row meta — eyebrow, short copy, CTA */}
+      <div className="relative z-20 mx-auto grid w-full max-w-[1700px] grid-cols-1 items-end gap-8 md:grid-cols-12">
+        <div className="hero-meta md:col-span-3">
+          <div className="eyebrow text-cream/45">Maison · Méditerranée</div>
+        </div>
+        <p className="hero-meta max-w-md text-base leading-relaxed text-cream/70 md:col-span-5">
+          Une orfèvrerie née du soleil, de la mer et de la pierre. Chaque pièce
+          retient un peu d’été — un éclat, une chaleur, un silence.
+        </p>
+        <div className="hero-meta flex items-center gap-5 md:col-span-4 md:justify-end">
+          <Cta href="/collection">Voir la collection</Cta>
           <Link
             href="/about"
-            className="text-[11px] uppercase tracking-[0.34em] text-ink/65 transition-colors duration-500 hover:text-ink"
+            className="text-[11px] uppercase tracking-[0.34em] text-cream/55 transition-colors duration-500 hover:text-cream"
           >
             La maison
           </Link>
         </div>
       </div>
 
-      <div className="hero-scroll absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-[10px] uppercase tracking-[0.42em] text-ink/45">
-        <div className="flex flex-col items-center gap-2">
-          <span>défilez</span>
-          <span className="block h-10 w-px animate-breathe bg-ink/30" />
-        </div>
+      {/* Subtle scroll cue */}
+      <div className="hero-scroll absolute bottom-3 left-1/2 z-20 -translate-x-1/2 text-[9px] uppercase tracking-[0.5em] text-cream/35">
+        défilez
       </div>
     </section>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
+import { ContourLines } from "@/components/bg/ContourLines";
 import { LogoIntro } from "@/components/intro/LogoIntro";
 import { Nav } from "@/components/nav/Nav";
 import { PhaseRouter } from "@/components/sun/PhaseRouter";
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#F6F1E8",
+  themeColor: "#070D17",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -51,13 +52,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`${serif.variable} ${sans.variable}`}>
-      <body className="bg-cream">
+      <body className="bg-night text-cream">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-[11px] focus:uppercase focus:tracking-[0.32em] focus:text-cream"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-cream focus:px-4 focus:py-2 focus:text-[11px] focus:uppercase focus:tracking-[0.32em] focus:text-night"
         >
           Aller au contenu
         </a>
+        <ContourLines />
         <SunCanvas />
         <PhaseRouter />
         <Nav />

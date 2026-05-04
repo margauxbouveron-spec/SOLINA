@@ -46,14 +46,14 @@ export function ProductCard({ product, index = 0 }: Props) {
     >
       {/* Outer shell — warm bezel */}
       <div
-        className="relative rounded-[24px] bg-sand/35 p-1.5 ring-1 ring-inset ring-ink/[0.06] transition-shadow duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:ring-ink/[0.12]"
+        className="relative rounded-[24px] bg-shore/35 p-1.5 ring-1 ring-inset ring-cream/[0.06] transition-shadow duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:ring-cream/[0.12]"
         style={{
-          boxShadow: "0 1px 0 rgba(255,255,255,0.7) inset, 0 24px 50px -28px rgba(31,24,20,0.18)",
+          boxShadow: "0 1px 0 rgba(244,236,221,0.06) inset, 0 28px 60px -32px rgba(0,0,0,0.55)",
         }}
       >
         {/* Inner core — image */}
         <div
-          className="sweep relative aspect-[4/5] overflow-hidden rounded-[18px] bg-cream"
+          className="sweep relative aspect-[4/5] overflow-hidden rounded-[18px] bg-night"
           style={{ perspective: 1200 }}
         >
           <div
@@ -74,13 +74,13 @@ export function ProductCard({ product, index = 0 }: Props) {
             className="pointer-events-none absolute inset-0"
             style={{
               boxShadow:
-                "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -90px 90px -50px rgba(26,24,20,0.18)",
+                "inset 0 1px 0 rgba(244,236,221,0.06), inset 0 -90px 90px -50px rgba(0,0,0,0.45)",
             }}
           />
 
           {/* Category eyebrow */}
           <div className="absolute left-3 top-3">
-            <span className="rounded-full bg-cream/80 px-2.5 py-1 text-[9px] uppercase tracking-[0.32em] text-ink/65 backdrop-blur-sm">
+            <span className="rounded-full bg-night/80 px-2.5 py-1 text-[9px] uppercase tracking-[0.32em] text-cream/65 backdrop-blur-sm">
               {product.category}
             </span>
           </div>
@@ -89,14 +89,14 @@ export function ProductCard({ product, index = 0 }: Props) {
 
       <div className="mt-5 flex items-baseline justify-between gap-4 px-1">
         <div className="min-w-0">
-          <h3 className="font-editorial text-2xl tracking-tight text-ink">
+          <h3 className="font-editorial text-2xl tracking-tight text-cream">
             {product.name}
           </h3>
-          <p className="mt-1 line-clamp-1 text-[13px] text-ink/60">
+          <p className="mt-1 line-clamp-1 text-[13px] text-cream/60">
             {product.poem}
           </p>
         </div>
-        <div className="shrink-0 text-[13px] tracking-[0.18em] text-ink/80">
+        <div className="shrink-0 text-[13px] tracking-[0.18em] text-cream/80">
           {formatPrice(product.price, product.currency)}
         </div>
       </div>

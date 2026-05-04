@@ -119,7 +119,7 @@ export function ProductViewer({ accent, shape }: Props) {
         shadows
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false }}
       >
-        <color attach="background" args={["#F6F1E8"]} />
+        <color attach="background" args={["#070D17"]} />
         <ambientLight intensity={0.45} color="#FFF1D0" />
         <SunLight />
         <Suspense fallback={null}>
@@ -145,7 +145,7 @@ export function ProductViewer({ accent, shape }: Props) {
         />
       </Canvas>
 
-      <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.42em] text-ink/40">
+      <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.42em] text-cream/40">
         glissez pour explorer
       </div>
     </div>

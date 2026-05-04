@@ -36,7 +36,7 @@ export function CollectionGrid({ products }: { products: Product[] }) {
             {f.label}
           </button>
         ))}
-        <span className="ml-auto text-[10px] uppercase tracking-[0.32em] text-ink/45">
+        <span className="ml-auto text-[10px] uppercase tracking-[0.32em] text-cream/45">
           {items.length} pièces
         </span>
       </div>

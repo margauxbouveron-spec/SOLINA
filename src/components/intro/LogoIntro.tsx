@@ -105,7 +105,7 @@ export function LogoIntro() {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-cream"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-night"
       aria-hidden={skip}
     >
       {/* Rays — pure CSS conic gradient, masked by orb */}
@@ -137,7 +137,7 @@ export function LogoIntro() {
       {/* Wordmark — the "O" is targeted by the orb migration */}
       <div
         ref={wordRef}
-        className="relative z-10 flex flex-col items-center text-ink"
+        className="relative z-10 flex flex-col items-center text-cream"
       >
         <h1 className="headline text-[12vmin] leading-none tracking-[-0.02em]">
           S
@@ -148,7 +148,7 @@ export function LogoIntro() {
         </h1>
         <div
           ref={taglineRef}
-          className="mt-6 text-[11px] tracking-[0.42em] uppercase text-ink/70"
+          className="mt-6 text-[11px] tracking-[0.42em] uppercase text-cream/70"
         >
           Capturer la lumière
         </div>

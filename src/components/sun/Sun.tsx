@@ -1,367 +1,255 @@
 "use client";
 
+import { Environment, Float } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useSunStore } from "./useSunStore";
 
-/* ───────────────── Photosphere — disc + corona + rays ───────────────── */
+/**
+ * The Sun — a full 3D iridescent metallic sphere.
+ *
+ * Replaces the original orthographic flat-shader sun with a real
+ * perspective-rendered orb. Smooth high-poly geometry with subtle vertex
+ * displacement for an organic blob feel; MeshPhysicalMaterial with
+ * iridescence + clearcoat tuned to a warm gold base, lit by a single
+ * gold key light that slides with the cursor + scroll. Bloom around it
+ * (added at the canvas level) yields the cinematic chrome-orb feel.
+ */
 
-const sunVertex = /* glsl */ `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const sunFragment = /* glsl */ `
-  precision highp float;
-  varying vec2 vUv;
-
+const vertexShader = /* glsl */ `
   uniform float uTime;
-  uniform float uIntensity;
-  uniform float uTemp;
-  uniform float uFlare;     // 0..1 momentary flare bursts
-  uniform vec3  uCore;
-  uniform vec3  uCorona;
-  uniform vec3  uHalo;
+  uniform float uDistort;
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
 
-  // ---- Noise helpers ----
-  vec2 hash2(vec2 p) {
-    p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
-    return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
-  }
-  float gnoise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(
-      mix(dot(hash2(i + vec2(0.0, 0.0)), f - vec2(0.0, 0.0)),
-          dot(hash2(i + vec2(1.0, 0.0)), f - vec2(1.0, 0.0)), u.x),
-      mix(dot(hash2(i + vec2(0.0, 1.0)), f - vec2(0.0, 1.0)),
-          dot(hash2(i + vec2(1.0, 1.0)), f - vec2(1.0, 1.0)), u.x),
-      u.y);
-  }
-  float fbm(vec2 p) {
-    float v = 0.0;
-    float a = 0.5;
-    for (int i = 0; i < 6; i++) {
-      v += a * gnoise(p);
-      p = mat2(1.6, 1.2, -1.2, 1.6) * p;
-      a *= 0.5;
-    }
-    return 0.5 + 0.5 * v;
-  }
-  // Domain-warped fbm — gives churning, "living" surface
-  float warpedFbm(vec2 p, float t) {
-    vec2 q = vec2(fbm(p + t * 0.05), fbm(p + vec2(5.2, 1.3) + t * 0.07));
-    vec2 r = vec2(fbm(p + 4.0 * q + vec2(1.7, 9.2) + t * 0.09),
-                  fbm(p + 4.0 * q + vec2(8.3, 2.8) + t * 0.11));
-    return fbm(p + 4.0 * r);
-  }
-
-  void main() {
-    vec2 uv = vUv - 0.5;
-    float d = length(uv);
-
-    // Discard far outside to save shading cost
-    if (d > 0.7) {
-      gl_FragColor = vec4(0.0);
-      return;
-    }
-
-    // ---- Photosphere disc (with limb darkening) ----
-    float disc = smoothstep(0.50, 0.48, d);
-    float limb = 1.0 - smoothstep(0.0, 0.50, d);
-    float limbDark = mix(0.55, 1.05, limb);          // edges dimmer
-
-    // Living surface — domain-warped multi-octave fbm
-    float surface = warpedFbm(uv * 6.0, uTime * 0.3);
-    surface = mix(0.7, 1.25, surface);
-
-    // Granulation — small high-freq cells (boiling effect)
-    float gran = fbm(uv * 28.0 + uTime * 0.4);
-    gran = mix(0.92, 1.08, gran);
-
-    // Sun spots — slow-moving darker patches
-    float spots = smoothstep(0.65, 0.4, fbm(uv * 5.5 + vec2(uTime * 0.04, -uTime * 0.03)));
-    spots = mix(1.0, 0.78, spots * 0.6);
-
-    float photo = disc * limbDark * surface * gran * spots;
-
-    // ---- Inner corona — radiant fall-off ----
-    float corona1 = smoothstep(0.55, 0.10, d) * 0.42;       // tight
-    float corona2 = smoothstep(0.95, 0.20, d) * 0.18;       // mid
-    float corona3 = smoothstep(1.40, 0.30, d) * 0.06;       // far halo
-
-    // ---- Volumetric god rays — angular noise on polar coords ----
-    float angle = atan(uv.y, uv.x);
-    float rays1 = fbm(vec2(angle * 6.0, uTime * 0.12));
-    float rays2 = fbm(vec2(angle * 18.0 - uTime * 0.06, 1.3));
-    float rays = pow(0.4 + 0.6 * (rays1 * 0.6 + rays2 * 0.4), 2.0);
-    rays *= smoothstep(0.7, 0.05, d) * 0.55;
-
-    // Sharp accent rays (thin spikes)
-    float spikes = 0.5 + 0.5 * sin(angle * 24.0 + uTime * 0.18);
-    spikes = pow(max(spikes, 0.0), 12.0) * smoothstep(0.5, 0.05, d) * 0.22;
-
-    // ---- Solar flares (burst pulses) ----
-    float flareRing = smoothstep(0.5, 0.48, d) - smoothstep(0.48, 0.42, d);
-    float flareN = smoothstep(0.55, 0.95, fbm(vec2(angle * 4.0, uTime * 0.6)));
-    float flares = flareRing * flareN * uFlare * 1.8;
-
-    // ---- Color grading by time-of-day ----
-    vec3 warm   = mix(uCore, uCorona, smoothstep(0.0, 0.5, d * 1.2));
-    warm        = mix(warm, uHalo,    smoothstep(0.4, 0.95, d * 1.4));
-    vec3 sunset = mix(warm, vec3(0.98, 0.52, 0.28), smoothstep(0.55, 1.0, uTemp));
-    vec3 dawn   = mix(vec3(1.00, 0.96, 0.86), warm, smoothstep(0.0, 0.5, uTemp));
-    vec3 col    = mix(dawn, sunset, smoothstep(0.0, 1.0, uTemp));
-
-    // Boost saturation of flares with a hotter tint
-    vec3 flareCol = mix(col, vec3(1.0, 0.85, 0.55), 0.6);
-
-    float a = clamp(
-      (photo + corona1 + corona2 + corona3 + rays + spikes) * uIntensity + flares,
-      0.0, 1.0
-    );
-
-    vec3 finalCol = col + flareCol * flares;
-
-    gl_FragColor = vec4(finalCol, a);
-  }
-`;
-
-/* ───────────────── Lens flare — anamorphic streak + ghosts ───────────────── */
-
-const flareFragment = /* glsl */ `
-  precision highp float;
-  varying vec2 vUv;
-  uniform float uTime;
-  uniform float uIntensity;
-  uniform vec3  uTint;
-
-  // Hash
-  float hash(float n) { return fract(sin(n) * 43758.5453123); }
-
-  void main() {
-    vec2 uv = vUv - 0.5;
-
-    // Anamorphic horizontal streak (cyan-tinted)
-    float streak = exp(-abs(uv.y) * 80.0) * exp(-abs(uv.x) * 1.2);
-    vec3 streakCol = vec3(0.55, 0.78, 1.0) * streak * 0.9;
-
-    // Vertical short streak
-    float streakV = exp(-abs(uv.x) * 90.0) * exp(-abs(uv.y) * 5.0) * 0.4;
-    streakCol += vec3(1.0, 0.92, 0.7) * streakV;
-
-    // Soft glow halo
-    float halo = exp(-length(uv) * 5.5) * 0.65;
-
-    // Ghost circles along the line from center
-    vec3 ghosts = vec3(0.0);
-    for (int i = 1; i <= 6; i++) {
-      float fi = float(i);
-      vec2 gp = uv * (1.0 + fi * 0.18);
-      float r = length(gp);
-      float g = exp(-r * (35.0 + fi * 8.0));
-      vec3 tint = mix(vec3(1.0, 0.7, 0.4), vec3(0.55, 0.8, 1.0), fract(fi * 0.37));
-      ghosts += g * tint * (0.05 + 0.02 * hash(fi));
-    }
-
-    // Subtle hex bloom
-    float ang = atan(uv.y, uv.x);
-    float hex = 0.5 + 0.5 * cos(ang * 6.0);
-    float hexBloom = exp(-length(uv) * 8.0) * (0.5 + 0.5 * hex) * 0.18;
-
-    vec3 col = (streakCol + uTint * halo + ghosts + uTint * hexBloom) * uIntensity;
-    float a = clamp(max(max(col.r, col.g), col.b), 0.0, 1.0);
-    gl_FragColor = vec4(col, a);
-  }
-`;
-
-/* ───────────────── Heat shimmer — subtle distortion below sun ───────────────── */
-
-const shimmerFragment = /* glsl */ `
-  precision highp float;
-  varying vec2 vUv;
-  uniform float uTime;
-  uniform float uIntensity;
-
-  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-  float n2(vec2 p) {
-    vec2 i = floor(p); vec2 f = fract(p);
-    float a = hash(i), b = hash(i + vec2(1,0)), c = hash(i + vec2(0,1)), d = hash(i + vec2(1,1));
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+  // Classic perlin noise (Ashima)
+  vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+  vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+  vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+  vec3 fade(vec3 t){return t*t*t*(t*(t*6.0-15.0)+10.0);}
+  float cnoise(vec3 P){
+    vec3 Pi0=floor(P);vec3 Pi1=Pi0+vec3(1.0);
+    Pi0=mod289(vec4(Pi0,0.0).xyz);Pi1=mod289(vec4(Pi1,0.0).xyz);
+    vec3 Pf0=fract(P);vec3 Pf1=Pf0-vec3(1.0);
+    vec4 ix=vec4(Pi0.x,Pi1.x,Pi0.x,Pi1.x);
+    vec4 iy=vec4(Pi0.yy,Pi1.yy);
+    vec4 iz0=Pi0.zzzz;vec4 iz1=Pi1.zzzz;
+    vec4 ixy=permute(permute(ix)+iy);
+    vec4 ixy0=permute(ixy+iz0);vec4 ixy1=permute(ixy+iz1);
+    vec4 gx0=ixy0*(1.0/7.0);vec4 gy0=fract(floor(gx0)*(1.0/7.0))-0.5;
+    gx0=fract(gx0);vec4 gz0=vec4(0.5)-abs(gx0)-abs(gy0);vec4 sz0=step(gz0,vec4(0.0));
+    gx0-=sz0*(step(0.0,gx0)-0.5);gy0-=sz0*(step(0.0,gy0)-0.5);
+    vec4 gx1=ixy1*(1.0/7.0);vec4 gy1=fract(floor(gx1)*(1.0/7.0))-0.5;
+    gx1=fract(gx1);vec4 gz1=vec4(0.5)-abs(gx1)-abs(gy1);vec4 sz1=step(gz1,vec4(0.0));
+    gx1-=sz1*(step(0.0,gx1)-0.5);gy1-=sz1*(step(0.0,gy1)-0.5);
+    vec3 g000=vec3(gx0.x,gy0.x,gz0.x);vec3 g100=vec3(gx0.y,gy0.y,gz0.y);
+    vec3 g010=vec3(gx0.z,gy0.z,gz0.z);vec3 g110=vec3(gx0.w,gy0.w,gz0.w);
+    vec3 g001=vec3(gx1.x,gy1.x,gz1.x);vec3 g101=vec3(gx1.y,gy1.y,gz1.y);
+    vec3 g011=vec3(gx1.z,gy1.z,gz1.z);vec3 g111=vec3(gx1.w,gy1.w,gz1.w);
+    vec4 norm0=taylorInvSqrt(vec4(dot(g000,g000),dot(g010,g010),dot(g100,g100),dot(g110,g110)));
+    g000*=norm0.x;g010*=norm0.y;g100*=norm0.z;g110*=norm0.w;
+    vec4 norm1=taylorInvSqrt(vec4(dot(g001,g001),dot(g011,g011),dot(g101,g101),dot(g111,g111)));
+    g001*=norm1.x;g011*=norm1.y;g101*=norm1.z;g111*=norm1.w;
+    float n000=dot(g000,Pf0);
+    float n100=dot(g100,vec3(Pf1.x,Pf0.yz));
+    float n010=dot(g010,vec3(Pf0.x,Pf1.y,Pf0.z));
+    float n110=dot(g110,vec3(Pf1.xy,Pf0.z));
+    float n001=dot(g001,vec3(Pf0.xy,Pf1.z));
+    float n101=dot(g101,vec3(Pf1.x,Pf0.y,Pf1.z));
+    float n011=dot(g011,vec3(Pf0.x,Pf1.yz));
+    float n111=dot(g111,Pf1);
+    vec3 fade_xyz=fade(Pf0);
+    vec4 n_z=mix(vec4(n000,n100,n010,n110),vec4(n001,n101,n011,n111),fade_xyz.z);
+    vec2 n_yz=mix(n_z.xy,n_z.zw,fade_xyz.y);
+    float n_xyz=mix(n_yz.x,n_yz.y,fade_xyz.x);
+    return 2.2*n_xyz;
   }
 
   void main() {
-    vec2 uv = vUv;
-    float wave = n2(vec2(uv.x * 8.0, uv.y * 4.0 + uTime * 0.6));
-    float falloff = smoothstep(0.0, 0.6, uv.y);     // strongest near top edge
-    float horiz = smoothstep(0.0, 0.4, abs(uv.x - 0.5)) * -0.6 + 1.0;
-    float a = wave * falloff * horiz * 0.18 * uIntensity;
-    gl_FragColor = vec4(vec3(1.0, 0.85, 0.55) * a, a);
+    float n = cnoise(position * 1.6 + vec3(uTime * 0.18));
+    float n2 = cnoise(position * 3.2 + vec3(uTime * 0.07, 0.0, uTime * 0.05));
+    float displacement = (n * 0.6 + n2 * 0.25) * uDistort;
+    vec3 displaced = position + normal * displacement;
+
+    vec4 mv = modelViewMatrix * vec4(displaced, 1.0);
+    vViewPosition = -mv.xyz;
+    vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * mv;
   }
 `;
 
-/* ───────────────── Component ───────────────── */
+/**
+ * Inner glow plane, sits behind the sphere — radial fade.
+ * Sells the "luminous body" feeling and keeps bloom hot in the center.
+ */
+function InnerGlow() {
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uColor: { value: new THREE.Color("#FFD68A") },
+      uIntensity: { value: 0.9 },
+    }),
+    []
+  );
 
-type SunProps = {
-  size?: number;
-  fixed?: [number, number, number];
+  useFrame((s) => {
+    if (matRef.current) matRef.current.uniforms.uTime.value = s.clock.elapsedTime;
+  });
+
+  return (
+    <mesh position={[0, 0, -0.6]} renderOrder={1}>
+      <planeGeometry args={[6, 6]} />
+      <shaderMaterial
+        ref={matRef}
+        uniforms={uniforms}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        vertexShader={`
+          varying vec2 vUv;
+          void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }
+        `}
+        fragmentShader={`
+          precision highp float;
+          varying vec2 vUv;
+          uniform float uTime;
+          uniform vec3 uColor;
+          uniform float uIntensity;
+          void main(){
+            vec2 p = vUv - 0.5;
+            float d = length(p);
+            float pulse = 0.92 + 0.08 * sin(uTime * 0.4);
+            float core = exp(-d * 4.6) * pulse;
+            float halo = exp(-d * 1.6) * 0.18;
+            float a = clamp(core * uIntensity + halo, 0.0, 1.0);
+            gl_FragColor = vec4(uColor * (core + halo) * uIntensity, a);
+          }
+        `}
+      />
+    </mesh>
+  );
+}
+
+type Props = {
+  /** Sphere radius in world units */
+  radius?: number;
 };
 
-export function Sun({ size = 1.4, fixed }: SunProps) {
+export function Sun({ radius = 1.05 }: Props) {
   const groupRef = useRef<THREE.Group>(null);
-  const sunMatRef = useRef<THREE.ShaderMaterial>(null);
-  const flareMatRef = useRef<THREE.ShaderMaterial>(null);
-  const shimmerMatRef = useRef<THREE.ShaderMaterial>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const matRef = useRef<THREE.ShaderMaterial | null>(null);
+  const lightRef = useRef<THREE.DirectionalLight>(null);
+  const lightRef2 = useRef<THREE.DirectionalLight>(null);
 
   const target = useRef(new THREE.Vector3());
   const current = useRef(new THREE.Vector3());
 
-  const sunUniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uIntensity: { value: 1 },
-      uTemp: { value: 0.5 },
-      uFlare: { value: 0 },
-      uCore: { value: new THREE.Color("#FFF4C9") },
-      uCorona: { value: new THREE.Color("#E5BC54") },
-      uHalo: { value: new THREE.Color("#F6E2A8") },
-    }),
-    []
-  );
+  // Shared uniforms for the displacement vertex shader. Patched into
+  // MeshPhysicalMaterial via onBeforeCompile so we keep PBR + iridescence.
+  const shaderUniforms = useRef<{
+    uTime: { value: number };
+    uDistort: { value: number };
+  }>({
+    uTime: { value: 0 },
+    uDistort: { value: 0.05 },
+  });
 
-  const flareUniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uIntensity: { value: 0 },
-      uTint: { value: new THREE.Color("#FFE6A8") },
-    }),
-    []
-  );
-
-  const shimmerUniforms = useMemo(
-    () => ({
-      uTime: { value: 0 },
-      uIntensity: { value: 0 },
-    }),
-    []
-  );
+  const onBeforeCompile = (shader: THREE.WebGLProgramParametersWithUniforms) => {
+    shader.uniforms.uTime = shaderUniforms.current.uTime;
+    shader.uniforms.uDistort = shaderUniforms.current.uDistort;
+    matRef.current = shader as unknown as THREE.ShaderMaterial;
+    // Replace the standard vertex shader entirely with our displacement one
+    shader.vertexShader = vertexShader;
+  };
 
   useFrame((state) => {
     const sun = useSunStore.getState();
     const t = state.clock.elapsedTime;
 
-    // Occasional flare burst — Perlin-like smooth pulse
-    const burst = Math.max(0, Math.sin(t * 0.27) - 0.92) * 12;
-    const burst2 = Math.max(0, Math.sin(t * 0.13 + 1.7) - 0.95) * 18;
-    const flareLevel = Math.min(1, burst + burst2);
+    // Update vertex displacement uniforms
+    shaderUniforms.current.uTime.value = t;
+    const targetDistort = sun.ready ? 0.06 : 0.0;
+    shaderUniforms.current.uDistort.value +=
+      (targetDistort - shaderUniforms.current.uDistort.value) * 0.04;
 
-    if (sunMatRef.current) {
-      const u = sunMatRef.current.uniforms;
-      u.uTime.value = t;
-      const targetIntensity = sun.ready ? sun.intensity : 0.001;
-      u.uIntensity.value += (targetIntensity - u.uIntensity.value) * 0.06;
-      u.uFlare.value += (flareLevel - u.uFlare.value) * 0.08;
+    if (groupRef.current) {
+      // Float — organic + cursor parallax + scroll descent (sunset)
+      const floatX = Math.sin(t * 0.2) * 0.06 + Math.cos(t * 0.13) * 0.04;
+      const floatY = Math.cos(t * 0.17) * 0.05 + Math.sin(t * 0.11) * 0.03;
+      target.current.set(
+        sun.pointer.x * 0.55 + floatX,
+        0.05 + sun.pointer.y * 0.25 + floatY - sun.scroll * 1.4,
+        0
+      );
+      current.current.lerp(target.current, 0.045);
+      groupRef.current.position.copy(current.current);
 
-      const phaseTemp =
-        sun.phase === "intro" ? 0.35 :
-        sun.phase === "hero" ? 0.5 :
-        sun.phase === "collection" ? 0.55 :
-        sun.phase === "product" ? 0.4 :
-        0.25;
-      const scrollTemp = phaseTemp + sun.scroll * 0.5;
-      u.uTemp.value += (scrollTemp - u.uTemp.value) * 0.04;
+      // Slow self-rotation so iridescence shifts continuously
+      groupRef.current.rotation.y = t * 0.08 + sun.pointer.x * 0.4;
+      groupRef.current.rotation.x = -0.12 + sun.pointer.y * 0.18;
+
+      // Breathing scale + intro grow
+      const breathe = 1 + Math.sin(t * 0.6) * 0.018;
+      const targetScale = sun.scale * breathe * (sun.ready ? 1 : 0.001);
+      const cur = groupRef.current.scale.x;
+      const next = cur + (targetScale - cur) * 0.06;
+      groupRef.current.scale.setScalar(next);
     }
 
-    if (flareMatRef.current) {
-      flareMatRef.current.uniforms.uTime.value = t;
-      const targetFlare = sun.ready ? sun.intensity * 0.85 : 0;
-      flareMatRef.current.uniforms.uIntensity.value +=
-        (targetFlare - flareMatRef.current.uniforms.uIntensity.value) * 0.05;
+    // Lights — gold key follows the cursor, cool blue rim opposite
+    if (lightRef.current) {
+      lightRef.current.position.set(
+        2.5 + sun.pointer.x * 1.5,
+        2.0 - sun.scroll * 2.0 + sun.pointer.y * 0.8,
+        2.0
+      );
+      lightRef.current.intensity = 1.6 * sun.intensity;
     }
-
-    if (shimmerMatRef.current) {
-      shimmerMatRef.current.uniforms.uTime.value = t;
-      const targetShim = sun.ready ? sun.intensity * 0.9 : 0;
-      shimmerMatRef.current.uniforms.uIntensity.value +=
-        (targetShim - shimmerMatRef.current.uniforms.uIntensity.value) * 0.05;
+    if (lightRef2.current) {
+      lightRef2.current.position.set(
+        -2.0 - sun.pointer.x * 0.8,
+        -1.0,
+        1.4
+      );
+      lightRef2.current.intensity = 0.5 * sun.intensity;
     }
-
-    if (!groupRef.current) return;
-
-    if (fixed) {
-      groupRef.current.position.set(fixed[0], fixed[1], fixed[2]);
-      groupRef.current.scale.setScalar(size * sun.scale);
-      return;
-    }
-
-    // Float — organic + cursor parallax + scroll sunset descent
-    const floatX = Math.sin(t * 0.2) * 0.05 + Math.cos(t * 0.13) * 0.03;
-    const floatY = Math.cos(t * 0.17) * 0.04 + Math.sin(t * 0.11) * 0.02;
-    target.current.set(
-      sun.pointer.x * 0.35 + floatX,
-      0.6 + sun.pointer.y * 0.18 + floatY - sun.scroll * 1.6,
-      0
-    );
-    current.current.lerp(target.current, 0.045);
-    groupRef.current.position.copy(current.current);
-
-    // Breathing scale + intro grow
-    const breathe = 1 + Math.sin(t * 0.7) * 0.012;
-    groupRef.current.scale.setScalar(size * sun.scale * breathe);
-
-    // Sun rotates very slowly to keep rays alive
-    groupRef.current.rotation.z = t * 0.012;
   });
 
   return (
-    <group ref={groupRef} renderOrder={10}>
-      {/* Heat shimmer underneath — large vertical strip */}
-      <mesh position={[0, -0.9, -0.02]} renderOrder={9}>
-        <planeGeometry args={[3.2, 1.8]} />
-        <shaderMaterial
-          ref={shimmerMatRef}
-          uniforms={shimmerUniforms}
-          vertexShader={sunVertex}
-          fragmentShader={shimmerFragment}
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
+    <group renderOrder={5}>
+      <InnerGlow />
 
-      {/* Far halo + lens flare ghosts (anamorphic) */}
-      <mesh position={[0, 0, -0.01]} renderOrder={11}>
-        <planeGeometry args={[6, 3]} />
-        <shaderMaterial
-          ref={flareMatRef}
-          uniforms={flareUniforms}
-          vertexShader={sunVertex}
-          fragmentShader={flareFragment}
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
+      {/* Lights */}
+      <ambientLight intensity={0.18} color="#33445c" />
+      <directionalLight ref={lightRef} color="#FFD08A" position={[3, 2, 2]} />
+      <directionalLight ref={lightRef2} color="#5A8FD0" position={[-2, -1, 1.4]} />
 
-      {/* Photosphere core */}
-      <mesh renderOrder={12}>
-        <planeGeometry args={[1, 1, 1, 1]} />
-        <shaderMaterial
-          ref={sunMatRef}
-          uniforms={sunUniforms}
-          vertexShader={sunVertex}
-          fragmentShader={sunFragment}
-          transparent
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
+      {/* Sphere group (position/scale animated) */}
+      <group ref={groupRef}>
+        <Float floatIntensity={0.25} rotationIntensity={0.08} speed={0.8}>
+          <mesh ref={meshRef} renderOrder={6}>
+            <icosahedronGeometry args={[radius, 64]} />
+            <meshPhysicalMaterial
+              color="#E6B45C"
+              metalness={1}
+              roughness={0.18}
+              clearcoat={1}
+              clearcoatRoughness={0.12}
+              iridescence={1}
+              iridescenceIOR={1.85}
+              iridescenceThicknessRange={[120, 720]}
+              envMapIntensity={1.6}
+              onBeforeCompile={onBeforeCompile}
+            />
+          </mesh>
+        </Float>
+      </group>
+
+      {/* Environment for reflections — sunset preset gives warm/cool spread */}
+      <Environment preset="sunset" />
     </group>
   );
 }

@@ -1,19 +1,19 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
+import { Bloom, ChromaticAberration, EffectComposer, Vignette } from "@react-three/postprocessing";
 import { BlendFunction, KernelSize } from "postprocessing";
-import { useEffect, useRef, useState } from "react";
-import { DustParticles } from "./DustParticles";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { Vector2 } from "three";
 import { Sun } from "./Sun";
 import { useSunStore } from "./useSunStore";
 
 /**
- * Persistent global Three canvas mounted in the root layout.
+ * Persistent global Three canvas — the cinematic stage.
  * Pointer & scroll listeners feed the zustand store + CSS vars on <html>.
  *
- * Bloom + dust particles are gated by a "high quality" flag — disabled
- * on small viewports / low DPR / reduced-motion preference for budget.
+ * Bloom + chromatic aberration + vignette are gated by a high-quality flag
+ * (>=768px AND no reduced-motion).
  */
 export function SunCanvas() {
   const setPointer = useSunStore((s) => s.setPointer);
@@ -70,8 +70,7 @@ export function SunCanvas() {
       className="pointer-events-none fixed inset-0 z-[3]"
     >
       <Canvas
-        orthographic
-        camera={{ position: [0, 0, 5], zoom: 220, near: 0.1, far: 100 }}
+        camera={{ position: [0, 0, 4.2], fov: 38, near: 0.1, far: 50 }}
         gl={{
           antialias: true,
           alpha: true,
@@ -81,19 +80,26 @@ export function SunCanvas() {
         dpr={[1, 2]}
         style={{ width: "100%", height: "100%" }}
       >
-        <ambientLight intensity={0.6} />
-        <Sun />
-        {highQuality && <DustParticles />}
+        <Suspense fallback={null}>
+          <Sun />
+        </Suspense>
         {highQuality && (
           <EffectComposer multisampling={0}>
             <Bloom
-              intensity={1.6}
-              luminanceThreshold={0.18}
+              intensity={1.9}
+              luminanceThreshold={0.22}
               luminanceSmoothing={0.7}
-              kernelSize={KernelSize.LARGE}
+              kernelSize={KernelSize.HUGE}
               mipmapBlur
               blendFunction={BlendFunction.SCREEN}
             />
+            <ChromaticAberration
+              offset={new Vector2(0.0009, 0.0009)}
+              radialModulation={true}
+              modulationOffset={0.6}
+              blendFunction={BlendFunction.NORMAL}
+            />
+            <Vignette eskil={false} offset={0.3} darkness={0.55} />
           </EffectComposer>
         )}
       </Canvas>

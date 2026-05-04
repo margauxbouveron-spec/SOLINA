@@ -37,18 +37,18 @@ export default function CheckoutPage() {
   return (
     <section className="gutter mx-auto max-w-[1400px] pt-32">
       <header>
-        <div className="eyebrow text-ink/55">Commande</div>
+        <div className="eyebrow text-cream/55">Commande</div>
         <h1 className="headline mt-6 text-[10vw] leading-[0.95] md:text-[72px]">
           Finalisons en silence.
         </h1>
       </header>
 
       {step === "thanks" ? (
-        <div className="mt-24 border-t border-ink/15 py-24 text-center">
-          <p className="font-editorial text-3xl text-ink/85 md:text-4xl">
+        <div className="mt-24 border-t border-cream/15 py-24 text-center">
+          <p className="font-editorial text-3xl text-cream/85 md:text-4xl">
             Merci. Un peu de soleil est en route.
           </p>
-          <p className="mt-4 text-sm text-ink/55">
+          <p className="mt-4 text-sm text-cream/55">
             Vous recevrez un e-mail de confirmation sous quelques minutes.
           </p>
         </div>
@@ -85,25 +85,25 @@ export default function CheckoutPage() {
           </div>
 
           <aside className="lg:col-span-5">
-            <div className="border border-ink/15 p-8">
-              <div className="eyebrow text-ink/55">Votre commande</div>
+            <div className="border border-cream/15 p-8">
+              <div className="eyebrow text-cream/55">Votre commande</div>
               <ul className="mt-6 space-y-4 text-sm">
                 {items.map((i) => (
-                  <li key={i.id} className="flex justify-between text-ink/75">
+                  <li key={i.id} className="flex justify-between text-cream/75">
                     <span>
                       {i.name}
-                      <span className="text-ink/45"> × {i.qty}</span>
+                      <span className="text-cream/45"> × {i.qty}</span>
                     </span>
                     <span>{formatPrice(i.price * i.qty, i.currency)}</span>
                   </li>
                 ))}
               </ul>
-              <dl className="mt-6 space-y-2 border-t border-ink/15 pt-6 text-sm text-ink/70">
+              <dl className="mt-6 space-y-2 border-t border-cream/15 pt-6 text-sm text-cream/70">
                 <div className="flex justify-between">
                   <dt>Livraison</dt>
                   <dd>Offerte</dd>
                 </div>
-                <div className="flex justify-between font-editorial text-2xl text-ink">
+                <div className="flex justify-between font-editorial text-2xl text-cream">
                   <dt>Total</dt>
                   <dd>{formatPrice(subtotal, currency)}</dd>
                 </div>
@@ -129,8 +129,8 @@ function Fieldset({
   children: React.ReactNode;
 }) {
   return (
-    <fieldset className="space-y-6 border-t border-ink/15 pt-8">
-      <legend className="eyebrow text-ink/55">{legend}</legend>
+    <fieldset className="space-y-6 border-t border-cream/15 pt-8">
+      <legend className="eyebrow text-cream/55">{legend}</legend>
       {children}
     </fieldset>
   );
@@ -142,12 +142,12 @@ function Field({
 }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <label className="block">
-      <span className="text-[10px] uppercase tracking-[0.32em] text-ink/55">
+      <span className="text-[10px] uppercase tracking-[0.32em] text-cream/55">
         {label}
       </span>
       <input
         {...props}
-        className="mt-2 block w-full border-b border-ink/30 bg-transparent py-2 text-sm focus:border-ink focus:outline-none"
+        className="mt-2 block w-full border-b border-cream/30 bg-transparent py-2 text-sm focus:border-cream focus:outline-none"
       />
     </label>
   );

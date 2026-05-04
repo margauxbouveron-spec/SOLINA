@@ -47,15 +47,15 @@ export function Cta({
 
   const skin =
     variant === "solid"
-      ? "bg-ink text-cream hover:bg-ink/90"
-      : "bg-transparent text-ink ring-1 ring-inset ring-ink/25 hover:ring-ink/55";
+      ? "bg-cream text-night hover:bg-cream/90"
+      : "bg-transparent text-cream ring-1 ring-inset ring-cream/25 hover:ring-cream/55";
 
   const inner =
     "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] " +
     "group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-[1.06] " +
     (variant === "solid"
-      ? "bg-cream/10 text-cream group-hover:bg-cream/20"
-      : "bg-ink/[0.06] text-ink group-hover:bg-ink/[0.12]");
+      ? "bg-night/10 text-night group-hover:bg-night/15"
+      : "bg-cream/[0.06] text-cream group-hover:bg-cream/[0.12]");
 
   const content = (
     <>

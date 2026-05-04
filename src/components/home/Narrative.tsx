@@ -80,7 +80,7 @@ export function Narrative() {
       {/* Water transition strip */}
       <section className="relative h-[70vh] w-full overflow-hidden">
         <Water />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-cream via-transparent to-cream/80" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night via-transparent to-night/85" />
         <div className="absolute inset-0 z-10 flex items-center justify-center gutter">
           <p className="headline max-w-3xl text-center text-[6vw] leading-[1.05] text-cream md:text-[44px]">
             “La lumière, je l’ai toujours portée comme un bijou.”
@@ -108,17 +108,17 @@ export function Narrative() {
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(180deg, rgba(246,241,232,0.0) 60%, rgba(246,241,232,0.55) 100%)",
+                  "linear-gradient(180deg, rgba(7,13,23,0.0) 35%, rgba(7,13,23,0.55) 80%, rgba(7,13,23,0.92) 100%)",
               }}
             />
           </div>
 
           <div className={`md:col-span-5 ${i % 2 === 1 ? "md:order-1" : ""}`}>
-            <div className="chapter-fade eyebrow text-ink/55">{c.eyebrow}</div>
+            <div className="chapter-fade eyebrow text-cream/55">{c.eyebrow}</div>
             <h2 className="chapter-fade headline mt-6 text-[10vw] leading-[0.95] md:text-[64px]">
               {c.title}
             </h2>
-            <p className="chapter-fade mt-8 max-w-md text-base leading-relaxed text-ink/70">
+            <p className="chapter-fade mt-8 max-w-md text-base leading-relaxed text-cream/70">
               {c.body}
             </p>
           </div>
@@ -127,7 +127,7 @@ export function Narrative() {
 
       {/* Closing CTA — minimal and confident */}
       <section className="gutter mx-auto max-w-[1600px] py-32 text-center">
-        <div className="eyebrow text-ink/55">La collection</div>
+        <div className="eyebrow text-cream/55">La collection</div>
         <h2 className="headline mx-auto mt-8 max-w-3xl text-[10vw] leading-[0.95] md:text-[88px]">
           Chaque bijou est un fragment du soleil.
         </h2>

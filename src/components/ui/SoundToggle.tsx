@@ -78,7 +78,7 @@ export function SoundToggle() {
       onClick={() => setOn((v) => !v)}
       aria-pressed={on}
       aria-label={on ? "Couper le son ambiant" : "Activer le son ambiant"}
-      className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-ink/20 bg-cream/70 px-4 py-2 text-[10px] uppercase tracking-[0.32em] backdrop-blur-md transition hover:border-ink/50"
+      className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full border border-cream/20 bg-night/70 px-4 py-2 text-[10px] uppercase tracking-[0.32em] backdrop-blur-md transition hover:border-cream/50"
     >
       <span
         className={`inline-block h-1.5 w-1.5 rounded-full transition ${
