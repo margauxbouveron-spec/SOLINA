@@ -1,29 +1,39 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { Bloom, EffectComposer } from "@react-three/postprocessing";
+import { BlendFunction, KernelSize } from "postprocessing";
+import { useEffect, useRef, useState } from "react";
+import { DustParticles } from "./DustParticles";
 import { Sun } from "./Sun";
 import { useSunStore } from "./useSunStore";
 
 /**
  * Persistent global Three canvas mounted in the root layout.
- * Sits above the cream background, below the page content (z-index controlled).
+ * Pointer & scroll listeners feed the zustand store + CSS vars on <html>.
  *
- * - Pointer & scroll listeners feed the zustand store (single source of truth).
- * - The same store also writes CSS vars on <html> so DOM elements can react to the sun.
+ * Bloom + dust particles are gated by a "high quality" flag — disabled
+ * on small viewports / low DPR / reduced-motion preference for budget.
  */
 export function SunCanvas() {
   const setPointer = useSunStore((s) => s.setPointer);
   const setScroll = useSunStore((s) => s.setScroll);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [highQuality, setHighQuality] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const wide = window.innerWidth >= 768;
+    const motion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setHighQuality(wide && motion && dpr >= 1);
+
     const onMove = (e: PointerEvent) => {
       const x = (e.clientX / window.innerWidth) * 2 - 1;
       const y = -((e.clientY / window.innerHeight) * 2 - 1);
       setPointer(x, y);
 
-      // CSS var bridge — keeps DOM lighting in sync with the WebGL sun
       document.documentElement.style.setProperty("--sun-x", `${e.clientX}px`);
       document.documentElement.style.setProperty(
         "--sun-y",
@@ -35,7 +45,6 @@ export function SunCanvas() {
       const max = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
       const s = Math.min(1, Math.max(0, window.scrollY / max));
       setScroll(s);
-      // Move CSS sun downward as user scrolls (sunset)
       const cssY = window.innerHeight * (0.18 + s * 0.7);
       document.documentElement.style.setProperty("--sun-y", `${cssY}px`);
       document.documentElement.style.setProperty(
@@ -74,6 +83,19 @@ export function SunCanvas() {
       >
         <ambientLight intensity={0.6} />
         <Sun />
+        {highQuality && <DustParticles />}
+        {highQuality && (
+          <EffectComposer multisampling={0}>
+            <Bloom
+              intensity={1.6}
+              luminanceThreshold={0.18}
+              luminanceSmoothing={0.7}
+              kernelSize={KernelSize.LARGE}
+              mipmapBlur
+              blendFunction={BlendFunction.SCREEN}
+            />
+          </EffectComposer>
+        )}
       </Canvas>
     </div>
   );
