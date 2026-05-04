@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
 import { LogoIntro } from "@/components/intro/LogoIntro";
@@ -9,16 +9,17 @@ import { SunCanvas } from "@/components/sun/SunCanvas";
 import { Footer } from "@/components/ui/Footer";
 import { SoundToggle } from "@/components/ui/SoundToggle";
 
-const serif = Cormorant_Garamond({
+const serif = Fraunces({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
   variable: "--font-serif",
   display: "swap",
+  axes: ["opsz", "SOFT"],
 });
 
-const sans = Inter({
+const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["300", "400", "500", "600"],
   variable: "--font-sans",
   display: "swap",
 });
@@ -51,10 +52,16 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${serif.variable} ${sans.variable}`}>
       <body className="bg-cream">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-[11px] focus:uppercase focus:tracking-[0.32em] focus:text-cream"
+        >
+          Aller au contenu
+        </a>
         <SunCanvas />
         <PhaseRouter />
         <Nav />
-        <main className="relative z-10">{children}</main>
+        <main id="main" className="relative z-10">{children}</main>
         <Footer />
         <SoundToggle />
         <LogoIntro />

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Cta } from "@/components/ui/Cta";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
@@ -26,10 +27,7 @@ export default function CartPage() {
             Le panier est encore une page blanche.
           </p>
           <div className="mt-10 inline-flex">
-            <Link href="/collection" className="cta">
-              Voir la collection
-              <span aria-hidden>→</span>
-            </Link>
+            <Cta href="/collection">Voir la collection</Cta>
           </div>
         </div>
       ) : (
@@ -115,10 +113,9 @@ export default function CartPage() {
               </dl>
 
               <div className="mt-8">
-                <Link href="/checkout" className="cta w-full justify-between">
+                <Cta href="/checkout" fullWidth arrow="ne">
                   Passer la commande
-                  <span aria-hidden>↗</span>
-                </Link>
+                </Cta>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-ink/50">
                 Paiement sécurisé · Écrin offert · Retour gratuit sous 30 jours

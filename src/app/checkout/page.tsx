@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Cta } from "@/components/ui/Cta";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
@@ -28,10 +28,7 @@ export default function CheckoutPage() {
       <section className="gutter mx-auto max-w-3xl pt-32 text-center">
         <h1 className="headline text-[10vw] md:text-[64px]">Panier vide</h1>
         <div className="mt-10 inline-flex">
-          <Link href="/collection" className="cta">
-            Retour à la collection
-            <span aria-hidden>→</span>
-          </Link>
+          <Cta href="/collection">Retour à la collection</Cta>
         </div>
       </section>
     );
@@ -112,10 +109,9 @@ export default function CheckoutPage() {
                 </div>
               </dl>
               <div className="mt-8">
-                <button type="submit" className="cta w-full justify-between">
+                <Cta type="submit" fullWidth arrow="ne">
                   Confirmer la commande
-                  <span aria-hidden>↗</span>
-                </button>
+                </Cta>
               </div>
             </div>
           </aside>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Cta } from "@/components/ui/Cta";
 import { useCart } from "@/lib/cart";
 import type { Product } from "@/lib/products";
 
@@ -9,17 +10,17 @@ export function AddToCart({ product }: { product: Product }) {
   const [pulse, setPulse] = useState(false);
 
   return (
-    <button
-      type="button"
+    <Cta
+      arrow="ne"
+      fullWidth
       onClick={() => {
         add(product);
         setPulse(true);
         setTimeout(() => setPulse(false), 700);
       }}
-      className={`cta w-full justify-between sm:w-auto ${pulse ? "animate-breathe" : ""}`}
+      className={pulse ? "ring-2 ring-gold/40" : ""}
     >
-      <span>Ajouter au panier</span>
-      <span aria-hidden>↗</span>
-    </button>
+      Ajouter au panier
+    </Cta>
   );
 }

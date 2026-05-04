@@ -15,6 +15,9 @@ export type Product = {
   images: { src: string; alt: string }[];
 };
 
+const img = (seed: string) =>
+  `https://picsum.photos/seed/solina-${seed}/1600/2000`;
+
 export const MOCK_PRODUCTS: Product[] = [
   {
     id: "p-soleil-01",
@@ -26,12 +29,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "bague",
     material: "or 18 carats, finition mate",
     accent: "#D4AF37",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1600&q=80",
-        alt: "Bague Soleil en or",
-      },
-    ],
+    images: [{ src: img("soleil-or-mati"), alt: "Bague Soleil en or 18 carats sur peau dorée" }],
   },
   {
     id: "p-mediterranee-01",
@@ -43,12 +41,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "collier",
     material: "or 18 carats, lapis-lazuli",
     accent: "#1F3A5F",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1600&q=80",
-        alt: "Collier Méditerranée",
-      },
-    ],
+    images: [{ src: img("mediterranee-bleu"), alt: "Collier Méditerranée et lapis-lazuli" }],
   },
   {
     id: "p-olivia-01",
@@ -60,12 +53,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "boucles",
     material: "or 18 carats, finition polie",
     accent: "#6E7F5F",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=1600&q=80",
-        alt: "Boucles d’oreilles Olivia",
-      },
-    ],
+    images: [{ src: img("olivia-feuilles"), alt: "Boucles d’oreilles Olivia inspirées de l’olivier" }],
   },
   {
     id: "p-pierre-01",
@@ -77,12 +65,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "bracelet",
     material: "or 18 carats, perle baroque",
     accent: "#E8D9C5",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1535632787350-4e68ef0ac584?auto=format&fit=crop&w=1600&q=80",
-        alt: "Bracelet Pierre",
-      },
-    ],
+    images: [{ src: img("pierre-calcaire"), alt: "Bracelet Pierre avec perle baroque" }],
   },
   {
     id: "p-aube-01",
@@ -94,12 +77,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "bague",
     material: "or 18 carats",
     accent: "#F6E2A8",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=1600&q=80",
-        alt: "Bague Aube",
-      },
-    ],
+    images: [{ src: img("aube-fine"), alt: "Bague Aube, anneau fin doré" }],
   },
   {
     id: "p-cigale-01",
@@ -111,12 +89,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "collier",
     material: "or 18 carats, citrine",
     accent: "#D4AF37",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=1600&q=80",
-        alt: "Collier Cigale",
-      },
-    ],
+    images: [{ src: img("cigale-citrine"), alt: "Collier Cigale avec pendentif citrine" }],
   },
   {
     id: "p-marina-01",
@@ -128,12 +101,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "boucles",
     material: "or 18 carats, nacre",
     accent: "#E8D9C5",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1633934542430-0905ccb5f050?auto=format&fit=crop&w=1600&q=80",
-        alt: "Boucles Marina",
-      },
-    ],
+    images: [{ src: img("marina-nacre"), alt: "Boucles Marina en nacre et or" }],
   },
   {
     id: "p-amalfi-01",
@@ -145,12 +113,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "bracelet",
     material: "or 18 carats, citrine",
     accent: "#D4AF37",
-    images: [
-      {
-        src: "https://images.unsplash.com/photo-1599459183205-ea4d3697f0aa?auto=format&fit=crop&w=1600&q=80",
-        alt: "Bracelet Amalfi",
-      },
-    ],
+    images: [{ src: img("amalfi-citron"), alt: "Bracelet Amalfi avec citrine ambre" }],
   },
 ];
 

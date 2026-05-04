@@ -3,8 +3,8 @@
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import Link from "next/link";
 import { useRef } from "react";
+import { Cta } from "@/components/ui/Cta";
 import { Water } from "../water/Water";
 
 if (typeof window !== "undefined") {
@@ -16,22 +16,19 @@ const chapters = [
     eyebrow: "I — La pierre",
     title: "Patience minérale",
     body: "Calcaire, sable, lin. Les matières du sud, polies par le temps. Chaque bijou retient un peu de leur silence.",
-    image:
-      "https://images.unsplash.com/photo-1611348586804-61bf6c080437?auto=format&fit=crop&w=1800&q=80",
+    image: "https://picsum.photos/seed/solina-pierre-calcaire-mediterranee/1800/2200",
   },
   {
     eyebrow: "II — La mer",
     title: "Lumière liquide",
     body: "L’or fond, la mer scintille. Nos pièces capturent ce point précis où la lumière devient eau.",
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=80",
+    image: "https://picsum.photos/seed/solina-mer-lumiere-or/1800/2200",
   },
   {
     eyebrow: "III — Le soleil",
     title: "Heure dorée",
     body: "Toute notre orfèvrerie vise un seul moment : celui où le soleil se penche, et où la peau s’embrase.",
-    image:
-      "https://images.unsplash.com/photo-1532635241-17e820acc59f?auto=format&fit=crop&w=1800&q=80",
+    image: "https://picsum.photos/seed/solina-golden-hour-peau/1800/2200",
   },
 ];
 
@@ -135,10 +132,7 @@ export function Narrative() {
           Chaque bijou est un fragment du soleil.
         </h2>
         <div className="mt-12 flex justify-center">
-          <Link href="/collection" className="cta">
-            Voir toutes les pièces
-            <span aria-hidden>→</span>
-          </Link>
+          <Cta href="/collection">Voir toutes les pièces</Cta>
         </div>
       </section>
     </div>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Cta } from "@/components/ui/Cta";
 
 export default function NotFound() {
   return (
@@ -11,10 +11,7 @@ export default function NotFound() {
         La page que vous cherchez n’existe plus ou n’a jamais existé.
       </p>
       <div className="mt-10">
-        <Link href="/" className="cta">
-          Retour à la lumière
-          <span aria-hidden>→</span>
-        </Link>
+        <Cta href="/">Retour à la lumière</Cta>
       </div>
     </section>
   );

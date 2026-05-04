@@ -11,6 +11,11 @@ const links = [
   { href: "/cart", label: "Panier" },
 ];
 
+/**
+ * Floating glass-pill navigation.
+ * Detached from the top edge, centered, with hairline + ultra-soft shadow.
+ * Becomes more opaque + tightens on scroll.
+ */
 export function Nav() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
@@ -25,55 +30,64 @@ export function Nav() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-40 transition-all duration-700 ease-silk ${
-        scrolled
-          ? "backdrop-blur-md bg-cream/65 border-b border-ink/5"
-          : "bg-transparent"
+      className={`pointer-events-none fixed inset-x-0 z-40 flex justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        scrolled ? "top-3" : "top-5"
       }`}
     >
-      <nav className="gutter mx-auto flex h-16 max-w-[1600px] items-center justify-between">
+      <nav
+        className={`pointer-events-auto flex items-center gap-2 rounded-full px-2 py-2 ring-1 ring-inset transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          scrolled
+            ? "bg-cream/75 ring-ink/10 backdrop-blur-xl"
+            : "bg-cream/30 ring-ink/[0.06] backdrop-blur-md"
+        }`}
+        style={{
+          boxShadow: scrolled
+            ? "0 18px 40px -28px rgba(31,24,20,0.18), inset 0 1px 0 rgba(255,255,255,0.45)"
+            : "0 14px 30px -28px rgba(31,24,20,0.12), inset 0 1px 0 rgba(255,255,255,0.35)",
+        }}
+      >
         <Link
           href="/"
           aria-label="SOLINA — accueil"
-          className="text-[13px] tracking-[0.42em] uppercase font-medium text-ink"
+          className="rounded-full px-4 py-2 text-[12px] font-medium uppercase tracking-[0.42em] text-ink"
         >
           SOLINA
         </Link>
 
-        <ul className="hidden items-center gap-10 md:flex">
+        <ul className="hidden items-center md:flex">
           {links.map((l) => {
             const active = pathname?.startsWith(l.href);
             return (
               <li key={l.href}>
                 <Link
                   href={l.href}
-                  className={`relative text-[11px] tracking-[0.34em] uppercase transition-colors duration-500 ${
+                  className={`relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10.5px] uppercase tracking-[0.32em] transition-colors duration-500 ${
                     active ? "text-ink" : "text-ink/60 hover:text-ink"
                   }`}
                 >
                   {l.label}
                   {l.href === "/cart" && count > 0 && (
-                    <span className="ml-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[9px] tracking-normal text-cream">
+                    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[9px] tracking-normal text-cream">
                       {count}
                     </span>
                   )}
-                  <span
-                    className={`absolute -bottom-1 left-0 right-0 h-px origin-left bg-ink transition-transform duration-700 ease-silk ${
-                      active ? "scale-x-100" : "scale-x-0"
-                    }`}
-                  />
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 -z-10 rounded-full bg-ink/[0.06]"
+                    />
+                  )}
                 </Link>
               </li>
             );
           })}
         </ul>
 
-        {/* Mobile cart shortcut */}
         <Link
           href="/cart"
-          className="text-[11px] tracking-[0.34em] uppercase md:hidden"
+          className="ml-1 rounded-full bg-ink/[0.06] px-3.5 py-2 text-[10.5px] uppercase tracking-[0.32em] text-ink md:hidden"
         >
-          Panier {count > 0 ? `(${count})` : ""}
+          Panier{count > 0 ? ` · ${count}` : ""}
         </Link>
       </nav>
     </header>

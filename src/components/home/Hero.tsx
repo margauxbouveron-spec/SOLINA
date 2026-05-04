@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { useRef } from "react";
+import { Cta } from "@/components/ui/Cta";
 
 export function Hero() {
   const root = useRef<HTMLDivElement>(null);
@@ -47,13 +48,10 @@ export function Hero() {
         </p>
 
         <div className="hero-cta mt-12 flex items-center gap-6">
-          <Link href="/collection" className="cta">
-            Découvrir la collection
-            <span aria-hidden>→</span>
-          </Link>
+          <Cta href="/collection">Découvrir la collection</Cta>
           <Link
             href="/about"
-            className="text-[11px] uppercase tracking-[0.34em] text-ink/65 hover:text-ink"
+            className="text-[11px] uppercase tracking-[0.34em] text-ink/65 transition-colors duration-500 hover:text-ink"
           >
             La maison
           </Link>
