@@ -61,20 +61,20 @@ const fragmentShader = /* glsl */ `
     vec2  sunPos    = vec2(0.5, sunY);
 
     /* ───── Color phases ───── */
-    // Phase 0: deep midnight
-    vec3 nightTop    = vec3(0.018, 0.030, 0.072);
-    vec3 nightBottom = vec3(0.030, 0.060, 0.110);
-    vec3 nightSea    = vec3(0.012, 0.022, 0.052);
+    // Phase 0: night under moonlight (bright enough to see the sea)
+    vec3 nightTop    = vec3(0.045, 0.070, 0.150);
+    vec3 nightBottom = vec3(0.090, 0.130, 0.220);
+    vec3 nightSea    = vec3(0.060, 0.110, 0.200);
 
-    // Phase 0.5: pre-dawn violet/indigo
-    vec3 dawnTop    = vec3(0.10, 0.10, 0.22);
-    vec3 dawnBottom = vec3(0.55, 0.30, 0.32);
-    vec3 dawnSea    = vec3(0.06, 0.12, 0.22);
+    // Phase 0.5: pre-dawn violet/peach
+    vec3 dawnTop    = vec3(0.18, 0.14, 0.30);
+    vec3 dawnBottom = vec3(0.70, 0.38, 0.36);
+    vec3 dawnSea    = vec3(0.12, 0.18, 0.28);
 
     // Phase 1: golden hour
     vec3 dayTop    = vec3(0.42, 0.34, 0.48);
     vec3 dayBottom = vec3(1.00, 0.74, 0.40);
-    vec3 daySea    = vec3(0.08, 0.18, 0.30);
+    vec3 daySea    = vec3(0.10, 0.22, 0.34);
 
     float p1 = smoothstep(0.0, 0.55, uProgress);
     float p2 = smoothstep(0.45, 1.0, uProgress);
@@ -181,8 +181,21 @@ const fragmentShader = /* glsl */ `
         col += vec3(1.00, 0.82, 0.50) * streak * 1.7;
       }
 
-      // Specular sparkles
+      // Cool moonlight glint — visible at night, fades as sun rises
+      {
+        float reflectX = abs(uv.x - 0.5) * aspect;
+        float reflectY = horizon - uv.y;
+        float moonW = 0.018 + reflectY * 0.30;
+        float moonStreak = exp(-reflectX * reflectX / max(0.0001, moonW * moonW));
+        float moonBreak = 0.5 + 0.5 * sin(uv.y * 80.0 - uTime * 3.5 + waves * 7.0);
+        moonStreak *= max(0.0, moonBreak);
+        moonStreak *= exp(-reflectY * 1.6);
+        col += vec3(0.55, 0.72, 0.95) * moonStreak * 0.55 * (1.0 - uProgress * 0.7);
+      }
+
+      // Specular sparkles — present always, intensify with progress
       float sparkle = pow(wave, 14.0);
+      col += vec3(0.85, 0.92, 1.00) * sparkle * 0.30;
       col += vec3(1.00, 0.95, 0.80) * sparkle * 0.45 * uProgress;
     }
 
@@ -202,7 +215,7 @@ const fragmentShader = /* glsl */ `
 
 function Scene({ progressRef }: { progressRef: React.MutableRefObject<{ value: number }> }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
-  const { size } = useThree();
+  const { size, viewport } = useThree();
 
   const uniforms = useMemo(
     () => ({
@@ -221,9 +234,11 @@ function Scene({ progressRef }: { progressRef: React.MutableRefObject<{ value: n
     matRef.current.uniforms.uResolution.value.set(state.size.width, state.size.height);
   });
 
+  // Fill the entire viewport: orthographic zoom=1 means 1 world unit == 1 px,
+  // so a unit plane scaled to (viewport.width, viewport.height) covers the screen.
   return (
-    <mesh>
-      <planeGeometry args={[2, 2]} />
+    <mesh scale={[viewport.width, viewport.height, 1]}>
+      <planeGeometry args={[1, 1]} />
       <shaderMaterial
         ref={matRef}
         uniforms={uniforms}

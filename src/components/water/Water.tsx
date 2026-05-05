@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -87,6 +87,7 @@ const frag = /* glsl */ `
 
 function Surface() {
   const matRef = useRef<THREE.ShaderMaterial>(null);
+  const { viewport } = useThree();
 
   const uniforms = useMemo(
     () => ({
@@ -108,8 +109,8 @@ function Surface() {
   });
 
   return (
-    <mesh>
-      <planeGeometry args={[2, 2, 1, 1]} />
+    <mesh scale={[viewport.width, viewport.height, 1]}>
+      <planeGeometry args={[1, 1, 1, 1]} />
       <shaderMaterial
         ref={matRef}
         uniforms={uniforms}
