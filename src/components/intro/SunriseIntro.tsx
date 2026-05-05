@@ -113,90 +113,116 @@ const fragmentShader = /* glsl */ `
       float horizonGlow = exp(-abs(uv.y - horizon) * 14.0);
       col += vec3(1.00, 0.55, 0.28) * horizonGlow * uProgress * 0.55;
 
-      // Sun disc + corona + rays (only when above horizon)
+      // Sun disc + corona — clean, no procedural rays
       if (sunY > horizon - 0.04) {
-        // Slight blob via noise
-        float blob = fbm((uv - sunPos) * 24.0 + uTime * 0.4);
-        float radius = 0.052 + (blob - 0.5) * 0.004;
-        float disc = smoothstep(radius, radius - 0.005, dSun);
-        float surface = fbm((uv - sunPos) * 80.0 + uTime * 0.2);
-        disc *= mix(0.92, 1.08, surface);
-        col = mix(col, vec3(1.00, 0.96, 0.78), disc);
+        // Perfectly round, very softly feathered disc — like a real distant sun
+        float radius = 0.048;
+        float disc = smoothstep(radius, radius - 0.004, dSun);
+        col = mix(col, vec3(1.00, 0.97, 0.86), disc);
 
-        // Thin rays
-        float angle = atan(dToSun.y, dToSun.x);
-        float rays = 0.5 + 0.5 * sin(angle * 26.0 + uTime * 0.18);
-        rays = pow(max(rays, 0.0), 12.0) * smoothstep(0.36, 0.05, dSun) * 0.30 * uProgress;
-        col += vec3(1.00, 0.92, 0.65) * rays;
+        // Tight inner corona — bright halo immediately around the disc
+        float coronaTight = exp(-dSun * 14.0) * 0.65;
+        col += vec3(1.00, 0.86, 0.55) * coronaTight;
 
-        // Inner corona
-        float corona = exp(-dSun * 12.0) * 0.55;
-        col += vec3(1.00, 0.85, 0.55) * corona;
+        // Wide outer corona — soft warm bloom
+        float coronaWide = exp(-dSun * 4.5) * 0.30;
+        col += vec3(1.00, 0.74, 0.42) * coronaWide;
+
+        // Subtle bright "kiss" at the very top of the disc — high-key highlight
+        float topKiss = exp(-dSun * 28.0) * smoothstep(0.0, 0.05, sunPos.y - uv.y + 0.03);
+        col += vec3(1.0, 0.98, 0.92) * topKiss * 0.4;
       }
 
-      // Thin cloud streaks — break the gradient
-      float clouds = smoothstep(0.55, 0.95, fbm(vec2(uv.x * 4.0 + uTime * 0.04, uv.y * 22.0)));
-      float cloudBand = smoothstep(0.62, 0.78, uv.y) * (1.0 - smoothstep(0.78, 0.95, uv.y));
-      col += vec3(1.0, 0.88, 0.7) * clouds * cloudBand * 0.18 * uProgress;
+      // Soft cloud band — smooth horizontal sine, no fbm
+      float cloudShape = sin(uv.x * 5.0 + uTime * 0.04) * 0.5 + 0.5;
+      cloudShape = smoothstep(0.45, 0.85, cloudShape);
+      float cloudBand = smoothstep(0.62, 0.74, uv.y) * (1.0 - smoothstep(0.74, 0.92, uv.y));
+      col += vec3(0.95, 0.78, 0.62) * cloudShape * cloudBand * 0.14 * uProgress;
     }
 
-    /* ───── SEA ───── */
+    /* ───── SEA — glassy, almost-mirror Mediterranean ───── */
     else {
-      col = seaCol;
-
-      // Wave field — multi-octave horizontal flow
-      vec2 waveP = vec2(uv.x * aspect, uv.y) * vec2(7.0, 30.0);
-      waveP.x += uTime * 0.18;
-      float waves = fbm(waveP);
-      float waves2 = fbm(waveP * 2.2 - vec2(uTime * 0.32, 0.0));
-      float wave = mix(waves, waves2, 0.55);
-
-      // Depth gradient — darker as you look down
+      // Depth gradient — sapphire near horizon, near-black at bottom
       float depth = (horizon - uv.y) / horizon;
-      col *= mix(1.25, 0.42, depth);
+      vec3 deep = seaCol * 0.32;
+      vec3 surface = seaCol * 1.55;
+      col = mix(surface, deep, smoothstep(0.0, 1.0, pow(depth, 0.85)));
 
-      // Wave highlights (small)
-      col += vec3(0.55, 0.72, 0.92) * pow(wave, 5.0) * 0.28;
+      // Very wide, very slow swells — broad sine curves, NOT noise.
+      // These give the water a sense of motion without graininess.
+      float swellA = sin(uv.y * 8.0 - uTime * 0.18) * 0.5 + 0.5;
+      float swellB = sin(uv.y * 3.2 + uTime * 0.09 + uv.x * 0.6) * 0.5 + 0.5;
+      float swell = swellA * swellB;
+      // Tint the swell slightly toward the warm bottom-of-sky color
+      vec3 swellTint = mix(vec3(0.06, 0.10, 0.18), skyBottom, 0.4);
+      col += swellTint * swell * 0.18 * (1.0 - depth * 0.6);
 
-      // Sun reflection — vertical streak from sun's column
+      // Subtle horizontal shimmer hairlines — pure sine, no noise
+      float hairlines = sin(uv.y * 200.0) * 0.5 + 0.5;
+      hairlines = smoothstep(0.78, 1.0, hairlines);
+      col += vec3(0.45, 0.62, 0.85) * hairlines * 0.06;
+
+      /* ── Sun reflection — bright smooth column ── */
       if (sunY > horizon - 0.05) {
         float reflectX = abs(uv.x - 0.5) * aspect;
         float reflectY = horizon - uv.y;
 
-        // Streak: narrow at top, widens with depth
-        float streakWidth = 0.025 + reflectY * 0.55;
-        float streak = exp(-reflectX * reflectX / max(0.0001, streakWidth * streakWidth));
+        // Smooth gaussian column that widens with depth
+        float colWidth = 0.045 + reflectY * 0.42;
+        float column = exp(-reflectX * reflectX / max(0.0001, colWidth * colWidth));
 
-        // Brokenness — modulated by waves
-        float streakBreak = 0.45 + 0.55 * sin(uv.y * 70.0 - uTime * 5.0 + waves * 8.0);
-        streak *= max(0.0, streakBreak);
+        // Clean horizontal banding — clean sines, no noise
+        float bands = 0.55 + 0.45 * sin(uv.y * 110.0 - uTime * 2.4);
+        bands = smoothstep(0.30, 1.0, bands);
+        column *= bands;
 
-        // Fade with depth
-        streak *= exp(-reflectY * 1.4);
+        // Fade with depth — exponential falloff
+        column *= exp(-reflectY * 1.5);
 
-        // Strength tied to sun height above horizon
-        float sunHeight = smoothstep(-0.02, 0.20, sunY - horizon);
-        streak *= sunHeight;
+        // Tied to sun height
+        float sunHeight = smoothstep(-0.02, 0.22, sunY - horizon);
+        column *= sunHeight;
 
-        col += vec3(1.00, 0.82, 0.50) * streak * 1.7;
+        // Warm gold reflection
+        col += vec3(1.00, 0.82, 0.48) * column * 2.1;
+
+        // Brilliant white-hot kernel right at the horizon directly under the sun
+        float kernel = exp(-reflectX * reflectX * 800.0) * exp(-reflectY * 18.0);
+        col += vec3(1.00, 0.95, 0.78) * kernel * sunHeight * 1.4;
       }
 
-      // Cool moonlight glint — visible at night, fades as sun rises
+      /* ── Moonlight glint — visible at night, fades as sun rises ── */
       {
         float reflectX = abs(uv.x - 0.5) * aspect;
         float reflectY = horizon - uv.y;
-        float moonW = 0.018 + reflectY * 0.30;
+        float moonW = 0.030 + reflectY * 0.32;
         float moonStreak = exp(-reflectX * reflectX / max(0.0001, moonW * moonW));
-        float moonBreak = 0.5 + 0.5 * sin(uv.y * 80.0 - uTime * 3.5 + waves * 7.0);
-        moonStreak *= max(0.0, moonBreak);
-        moonStreak *= exp(-reflectY * 1.6);
-        col += vec3(0.55, 0.72, 0.95) * moonStreak * 0.55 * (1.0 - uProgress * 0.7);
+        float moonBands = 0.55 + 0.45 * sin(uv.y * 130.0 - uTime * 1.8);
+        moonBands = smoothstep(0.30, 1.0, moonBands);
+        moonStreak *= moonBands;
+        moonStreak *= exp(-reflectY * 1.7);
+        col += vec3(0.62, 0.78, 0.98) * moonStreak * 0.85 * (1.0 - uProgress * 0.8);
       }
 
-      // Specular sparkles — present always, intensify with progress
-      float sparkle = pow(wave, 14.0);
-      col += vec3(0.85, 0.92, 1.00) * sparkle * 0.30;
-      col += vec3(1.00, 0.95, 0.80) * sparkle * 0.45 * uProgress;
+      /* ── Diamond sparkles — sparse, sharp, drifting ── */
+      // Coarse cell grid keeps sparkles distinct (not a noise carpet)
+      vec2 cellSize = vec2(140.0, 70.0);
+      vec2 cell = floor(uv * cellSize + vec2(uTime * 0.04, 0.0));
+      float h = hash(cell);
+      // Only ~1.2% of cells host a sparkle
+      float spark = step(0.988, h);
+      // Each sparkle pulses with its own phase
+      float pulse = 0.4 + 0.6 * sin(uTime * 3.0 + h * 30.0);
+      // Position inside the cell, accentuate the very center
+      vec2 cellUV = fract(uv * cellSize + vec2(uTime * 0.04, 0.0)) - 0.5;
+      float pt = exp(-dot(cellUV, cellUV) * 90.0);
+      float sparkle = spark * pulse * pt;
+      // Concentrate sparkles in the top third of the sea (near horizon)
+      float sparkleBand = smoothstep(0.0, 0.28, depth) * (1.0 - smoothstep(0.55, 1.0, depth));
+      sparkle *= sparkleBand;
+      // Cool-tinted at night, warm as the sun rises
+      vec3 sparkleCol = mix(vec3(0.85, 0.95, 1.0), vec3(1.0, 0.92, 0.72), uProgress);
+      col += sparkleCol * sparkle * 1.6;
     }
 
     /* ───── Vignette + grain ───── */
