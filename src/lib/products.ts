@@ -13,6 +13,8 @@ export type Product = {
   /** Hex used for the product page accent and 3D viewer base color */
   accent: string;
   images: { src: string; alt: string }[];
+  /** Shopify variant GID — required to checkout via Shopify, undefined for mock */
+  variantId?: string;
 };
 
 const img = (seed: string) =>

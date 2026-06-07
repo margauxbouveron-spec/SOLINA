@@ -1,16 +1,69 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Cta } from "@/components/ui/Cta";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
 export default function CartPage() {
+  const router = useRouter();
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
   const subtotal = useCart((s) => s.subtotal());
   const currency = items[0]?.currency ?? "EUR";
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const onCheckout = async () => {
+    setError(null);
+
+    // Build Shopify lines from cart items that have a variantId.
+    // (Mock items have none — fall back to the simulated checkout.)
+    const lines = items
+      .filter((i) => i.variantId)
+      .map((i) => ({ variantId: i.variantId!, quantity: i.qty }));
+
+    if (lines.length === 0) {
+      router.push("/checkout");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        // Shopify not configured on the server → graceful demo fallback
+        if (data.error === "SHOPIFY_NOT_CONFIGURED") {
+          router.push("/checkout");
+          return;
+        }
+        throw new Error(data.error ?? "Le paiement a échoué");
+      }
+
+      const { checkoutUrl } = (await res.json()) as { checkoutUrl?: string };
+      if (!checkoutUrl) {
+        throw new Error("Réponse Shopify invalide");
+      }
+      window.location.href = checkoutUrl;
+    } catch (e) {
+      setLoading(false);
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Une erreur est survenue. Réessayez."
+      );
+    }
+  };
 
   return (
     <section className="gutter mx-auto max-w-[1400px] pt-32">
@@ -34,7 +87,10 @@ export default function CartPage() {
         <div className="mt-16 grid gap-16 lg:grid-cols-12">
           <ul className="divide-y divide-cream/10 border-y border-cream/15 lg:col-span-8">
             {items.map((item) => (
-              <li key={item.id} className="grid grid-cols-12 items-center gap-4 py-8">
+              <li
+                key={item.id}
+                className="grid grid-cols-12 items-center gap-4 py-8"
+              >
                 <div className="col-span-3 sm:col-span-2">
                   <div className="aspect-square overflow-hidden bg-shore/40">
                     {item.image && (
@@ -113,12 +169,29 @@ export default function CartPage() {
               </dl>
 
               <div className="mt-8">
-                <Cta href="/checkout" fullWidth arrow="ne">
-                  Passer la commande
+                <Cta
+                  fullWidth
+                  arrow="ne"
+                  onClick={onCheckout}
+                  disabled={loading}
+                  aria-busy={loading}
+                >
+                  {loading ? "Connexion à la caisse…" : "Passer la commande"}
                 </Cta>
               </div>
+
+              {error && (
+                <p
+                  role="alert"
+                  className="mt-4 text-[11px] uppercase tracking-[0.18em] text-red-300/80"
+                >
+                  {error}
+                </p>
+              )}
+
               <p className="mt-4 text-xs leading-relaxed text-cream/50">
-                Paiement sécurisé · Écrin offert · Retour gratuit sous 30 jours
+                Paiement sécurisé par Shopify · Écrin offert · Retour gratuit
+                sous 30 jours
               </p>
             </div>
           </aside>

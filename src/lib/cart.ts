@@ -6,6 +6,8 @@ import type { Product } from "./products";
 
 export type CartItem = {
   id: string;
+  /** Shopify variant GID — used at checkout to create the Shopify cart */
+  variantId?: string;
   handle: string;
   name: string;
   price: number;
@@ -42,6 +44,7 @@ export const useCart = create<CartState>()(
               ...state.items,
               {
                 id: p.id,
+                variantId: p.variantId,
                 handle: p.handle,
                 name: p.name,
                 price: p.price,
