@@ -1,26 +1,29 @@
 "use client";
 
-import { useState } from "react";
 import { Cta } from "@/components/ui/Cta";
-import { useCart } from "@/lib/cart";
+import { SHOPIFY_PUBLIC_DOMAIN_FALLBACK } from "@/lib/config";
 import type { Product } from "@/lib/products";
 
+/**
+ * Vitrine mode — purchasing happens on the real Shopify store.
+ * The button is an external link that opens the corresponding Shopify
+ * product page, where the customer adds to cart and pays through
+ * Shopify's native, working checkout.
+ */
 export function AddToCart({ product }: { product: Product }) {
-  const add = useCart((s) => s.add);
-  const [pulse, setPulse] = useState(false);
+  const domain =
+    process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN || SHOPIFY_PUBLIC_DOMAIN_FALLBACK;
+  const href = `https://${domain}/products/${product.handle}`;
 
   return (
     <Cta
+      href={href}
       arrow="ne"
       fullWidth
-      onClick={() => {
-        add(product);
-        setPulse(true);
-        setTimeout(() => setPulse(false), 700);
-      }}
-      className={pulse ? "ring-2 ring-gold/40" : ""}
+      rel="noopener"
+      target="_self"
     >
-      Ajouter au panier
+      Acheter sur Solina Bijoux
     </Cta>
   );
 }

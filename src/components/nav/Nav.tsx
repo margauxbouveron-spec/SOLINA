@@ -3,25 +3,27 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useCart } from "@/lib/cart";
+import { SHOPIFY_PUBLIC_DOMAIN_FALLBACK } from "@/lib/config";
 
 const links = [
   { href: "/", label: "Index" },
   { href: "/collection", label: "Collection" },
   { href: "/about", label: "Maison" },
-  { href: "/cart", label: "Panier" },
 ];
 
 /**
- * Hamburger top-left + center wordmark + cart shortcut top-right.
- * Click the hamburger → full-screen glass overlay with staggered links.
+ * Hamburger top-left + center wordmark + "Boutique" external link to
+ * the real Shopify store top-right. The Vercel site is a vitrine —
+ * actual cart and checkout live on solinabijoux.com.
  */
 export function Nav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const count = useCart((s) => s.items.reduce((n, i) => n + i.qty, 0));
 
-  // Lock body scroll while menu is open
+  const shopDomain =
+    process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN || SHOPIFY_PUBLIC_DOMAIN_FALLBACK;
+  const shopHref = `https://${shopDomain}`;
+
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -29,12 +31,10 @@ export function Nav() {
     };
   }, [open]);
 
-  // Close on route change
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  // Close on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
@@ -77,19 +77,29 @@ export function Nav() {
           solina
         </Link>
 
-        {/* Cart shortcut */}
-        <Link
-          href="/cart"
+        {/* External shop link */}
+        <a
+          href={shopHref}
+          rel="noopener"
           className="flex h-12 items-center gap-2 rounded-full bg-cream/[0.06] px-4 text-[10.5px] uppercase tracking-[0.32em] text-cream ring-1 ring-inset ring-cream/15 backdrop-blur-md transition-all duration-500 hover:bg-cream/[0.10] hover:ring-cream/30"
         >
-          <span className="hidden sm:inline">Panier</span>
-          <span aria-hidden className="sm:hidden">⌥</span>
-          {count > 0 && (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 text-[9px] tracking-normal text-night">
-              {count}
-            </span>
-          )}
-        </Link>
+          <span>Boutique</span>
+          <svg
+            viewBox="0 0 24 24"
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className="hidden sm:block"
+          >
+            <path d="M7 17L17 7" />
+            <path d="M9 7h8v8" />
+          </svg>
+        </a>
       </header>
 
       {/* Slide-down full overlay */}
@@ -104,7 +114,9 @@ export function Nav() {
         <div className="absolute inset-0 bg-night/85 backdrop-blur-2xl" />
         <nav className="relative z-10 flex flex-col items-center gap-6 text-center">
           {links.map((l, i) => {
-            const active = pathname === l.href || (l.href !== "/" && pathname?.startsWith(l.href));
+            const active =
+              pathname === l.href ||
+              (l.href !== "/" && pathname?.startsWith(l.href));
             return (
               <Link
                 key={l.href}
@@ -117,17 +129,29 @@ export function Nav() {
                 } ${active ? "text-cream" : "text-cream/55 hover:text-cream"}`}
               >
                 {l.label}
-                {l.href === "/cart" && count > 0 && (
-                  <span className="ml-3 align-middle text-[14px] tracking-[0.3em] text-gold">
-                    · {count}
-                  </span>
-                )}
               </Link>
             );
           })}
+
+          {/* External link to the real shop, last item of the overlay */}
+          <a
+            href={shopHref}
+            rel="noopener"
+            style={{
+              transitionDelay: open ? `${120 + links.length * 70}ms` : "0ms",
+            }}
+            className={`headline text-[14vw] leading-[0.95] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:text-[96px] ${
+              open ? "translate-y-0 opacity-100 blur-0" : "translate-y-8 opacity-0 blur-md"
+            } text-gold/85 hover:text-gold`}
+          >
+            <span className="italic">Boutique ↗</span>
+          </a>
+
           <div
             style={{
-              transitionDelay: open ? `${120 + links.length * 70 + 80}ms` : "0ms",
+              transitionDelay: open
+                ? `${120 + (links.length + 1) * 70 + 80}ms`
+                : "0ms",
             }}
             className={`mt-10 text-[10px] uppercase tracking-[0.42em] text-cream/45 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
