@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Cta } from "@/components/ui/Cta";
 import { useCart } from "@/lib/cart";
+import { SHOPIFY_PUBLIC_DOMAIN_FALLBACK } from "@/lib/config";
 import { formatPrice } from "@/lib/products";
 
 /**
@@ -36,8 +37,10 @@ export default function CartPage() {
 
   // Public override — set NEXT_PUBLIC_SHOPIFY_DOMAIN to enable a token-less
   // checkout via Shopify cart permalinks (works even when the server
-  // doesn't have the Storefront API token).
-  const publicDomain = process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN;
+  // doesn't have the Storefront API token). Falls back to the hardcoded
+  // value in src/lib/config.ts.
+  const publicDomain =
+    process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN || SHOPIFY_PUBLIC_DOMAIN_FALLBACK;
 
   useEffect(() => {
     fetch("/api/cart")
