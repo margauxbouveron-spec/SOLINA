@@ -2,67 +2,122 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Cta } from "@/components/ui/Cta";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
+
+/**
+ * Extract the numeric variant ID from a Shopify variant GID.
+ * "gid://shopify/ProductVariant/45678901234" → "45678901234"
+ */
+function variantIdToNumeric(gid: string): string | null {
+  const match = gid.match(/ProductVariant\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+type ShopifyStatus = {
+  shopifyConfigured: boolean;
+  domain: string | null;
+};
 
 export default function CartPage() {
   const router = useRouter();
   const items = useCart((s) => s.items);
   const setQty = useCart((s) => s.setQty);
   const remove = useCart((s) => s.remove);
+  const clear = useCart((s) => s.clear);
   const subtotal = useCart((s) => s.subtotal());
   const currency = items[0]?.currency ?? "EUR";
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<ShopifyStatus | null>(null);
+
+  // Public override — set NEXT_PUBLIC_SHOPIFY_DOMAIN to enable a token-less
+  // checkout via Shopify cart permalinks (works even when the server
+  // doesn't have the Storefront API token).
+  const publicDomain = process.env.NEXT_PUBLIC_SHOPIFY_DOMAIN;
+
+  useEffect(() => {
+    fetch("/api/cart")
+      .then((r) => r.json())
+      .then((d) => setStatus(d))
+      .catch(() => setStatus({ shopifyConfigured: false, domain: null }));
+  }, []);
+
+  const itemsWithVariant = items.filter((i) => i.variantId);
+  const allHaveVariant = items.length > 0 && itemsWithVariant.length === items.length;
 
   const onCheckout = async () => {
     setError(null);
 
-    // Build Shopify lines from cart items that have a variantId.
-    // (Mock items have none — fall back to the simulated checkout.)
-    const lines = items
-      .filter((i) => i.variantId)
-      .map((i) => ({ variantId: i.variantId!, quantity: i.qty }));
+    const lines = itemsWithVariant.map((i) => ({
+      variantId: i.variantId!,
+      quantity: i.qty,
+    }));
 
-    if (lines.length === 0) {
-      router.push("/checkout");
+    // ─── Path A: server-side Storefront API + hosted checkout ───
+    if (lines.length > 0) {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lines }),
+        });
+
+        if (res.ok) {
+          const { checkoutUrl } = (await res.json()) as { checkoutUrl?: string };
+          if (checkoutUrl) {
+            window.location.href = checkoutUrl;
+            return;
+          }
+        }
+
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+
+        // ─── Path B: fallback to Shopify cart permalink (no token needed) ───
+        if (publicDomain) {
+          const permalink = lines
+            .map((l) => {
+              const num = variantIdToNumeric(l.variantId);
+              return num ? `${num}:${l.quantity}` : null;
+            })
+            .filter(Boolean)
+            .join(",");
+          if (permalink) {
+            window.location.href = `https://${publicDomain}/cart/${permalink}`;
+            return;
+          }
+        }
+
+        throw new Error(
+          data.error === "SHOPIFY_NOT_CONFIGURED"
+            ? "Shopify n'est pas configuré côté serveur (variables SHOPIFY_DOMAIN / SHOPIFY_STOREFRONT_TOKEN manquantes dans Vercel)."
+            : data.error === "CART_CREATION_FAILED"
+            ? "Shopify a refusé le panier (variant introuvable ou rupture de stock)."
+            : `Erreur ${res.status}`
+        );
+      } catch (e) {
+        setLoading(false);
+        setError(
+          e instanceof Error ? e.message : "Une erreur est survenue."
+        );
+      }
       return;
     }
 
-    setLoading(true);
-    try {
-      const res = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lines }),
-      });
-
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        // Shopify not configured on the server → graceful demo fallback
-        if (data.error === "SHOPIFY_NOT_CONFIGURED") {
-          router.push("/checkout");
-          return;
-        }
-        throw new Error(data.error ?? "Le paiement a échoué");
-      }
-
-      const { checkoutUrl } = (await res.json()) as { checkoutUrl?: string };
-      if (!checkoutUrl) {
-        throw new Error("Réponse Shopify invalide");
-      }
-      window.location.href = checkoutUrl;
-    } catch (e) {
-      setLoading(false);
+    // ─── No variantIds on any item: cart is stale / mock ───
+    if (publicDomain) {
       setError(
-        e instanceof Error
-          ? e.message
-          : "Une erreur est survenue. Réessayez."
+        "Votre panier contient des articles obsolètes (sans identifiant Shopify). Cliquez sur \"Vider le panier\" et rajoutez vos pièces."
       );
+      return;
     }
+
+    // Demo mode — show the simulated checkout
+    router.push("/checkout");
   };
 
   return (
@@ -183,10 +238,60 @@ export default function CartPage() {
               {error && (
                 <p
                   role="alert"
-                  className="mt-4 text-[11px] uppercase tracking-[0.18em] text-red-300/80"
+                  className="mt-4 text-[11px] leading-relaxed text-red-300/85"
                 >
                   {error}
                 </p>
+              )}
+
+              {/* Diagnostic strip — surfaces the real state so we never
+                  silently fall back to a fake confirmation */}
+              <div className="mt-6 space-y-2 border-t border-cream/10 pt-4 text-[10px] uppercase tracking-[0.22em] text-cream/45">
+                <div className="flex justify-between gap-3">
+                  <span>Shopify (serveur)</span>
+                  <span
+                    className={
+                      status === null
+                        ? "text-cream/45"
+                        : status.shopifyConfigured
+                        ? "text-emerald-300/85"
+                        : "text-red-300/85"
+                    }
+                  >
+                    {status === null
+                      ? "…"
+                      : status.shopifyConfigured
+                      ? "Connecté"
+                      : "Non configuré"}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span>Articles avec variant Shopify</span>
+                  <span
+                    className={
+                      items.length === 0
+                        ? "text-cream/45"
+                        : allHaveVariant
+                        ? "text-emerald-300/85"
+                        : "text-amber-300/85"
+                    }
+                  >
+                    {itemsWithVariant.length}/{items.length}
+                  </span>
+                </div>
+              </div>
+
+              {items.length > 0 && !allHaveVariant && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    clear();
+                    setError(null);
+                  }}
+                  className="mt-3 text-[10px] uppercase tracking-[0.32em] text-cream/55 underline-offset-4 hover:text-cream hover:underline"
+                >
+                  Vider le panier et recommencer
+                </button>
               )}
 
               <p className="mt-4 text-xs leading-relaxed text-cream/50">
