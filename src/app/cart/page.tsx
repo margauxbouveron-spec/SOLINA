@@ -9,12 +9,15 @@ import { SHOPIFY_PUBLIC_DOMAIN_FALLBACK } from "@/lib/config";
 import { formatPrice } from "@/lib/products";
 
 /**
- * Extract the numeric variant ID from a Shopify variant GID.
- * "gid://shopify/ProductVariant/45678901234" → "45678901234"
+ * Extract the numeric variant ID from either a Shopify GID
+ * ("gid://shopify/ProductVariant/45678901234") or a raw numeric ID
+ * (already what products.json returns).
  */
-function variantIdToNumeric(gid: string): string | null {
-  const match = gid.match(/ProductVariant\/(\d+)/);
-  return match ? match[1] : null;
+function variantIdToNumeric(id: string): string | null {
+  const gidMatch = id.match(/ProductVariant\/(\d+)/);
+  if (gidMatch) return gidMatch[1];
+  if (/^\d+$/.test(id)) return id;
+  return null;
 }
 
 type ShopifyStatus = {
